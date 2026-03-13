@@ -16,7 +16,10 @@ function escapeHtml(s) {
   return s.replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;');
 }
 
-function fmt(n) { return n.toFixed(2).replace('.', ',') + ' €'; }
+function fmt(n) {
+  // Formato pesos argentinos: $ 1.200 (sin decimales para precios enteros)
+  return '$ ' + Math.round(n).toLocaleString('es-AR');
+}
 
 // ── Tabs ─────────────────────────────────────────────────────────────────────
 document.querySelectorAll('.tab').forEach(btn => {
