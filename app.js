@@ -199,14 +199,13 @@ function renderRealResults(productos, query) {
       </div>`;
     }).join('');
 
-    const subtitle = [prod.marca, prod.presentacion].filter(Boolean).join(' · ');
-
     return `<div class="product-card">
       <div class="product-header">
         ${productImgHtml(prod.ean)}
         <div class="product-info">
           <span class="product-name">${escapeHtml(prod.nombre)}</span>
-          ${subtitle ? `<span class="product-unit">${escapeHtml(subtitle)}</span>` : ''}
+          ${prod.marca ? `<span class="product-brand">${escapeHtml(prod.marca)}</span>` : ''}
+          ${prod.presentacion ? `<span class="product-unit">${escapeHtml(prod.presentacion)}</span>` : ''}
         </div>
       </div>
       <div class="source-tag">Precios Claros 🟢</div>
@@ -476,12 +475,18 @@ function chainLogoHtml(name) {
 function chainLogo(name) { return chainEmoji(name); }
 
 // URL directa de imagen de producto en Open Food Facts (por EAN)
-// Si el producto no existe, el onerror la oculta automáticamente
-function offImgUrl(ean) {
+function offImgUrl(ean, variant = 'front_es') {
   if (!ean) return null;
   const s = String(ean).replace(/\D/g,'').padStart(13,'0');
   const path = `${s.slice(0,3)}/${s.slice(3,6)}/${s.slice(6,9)}/${s.slice(9)}`;
-  return `https://images.openfoodfacts.org/images/products/${path}/front_es.400.jpg`;
+  return `https://images.openfoodfacts.org/images/products/${path}/${variant}.400.jpg`;
+}
+
+// Cadena de fallback: front_es → front_fr → front → onerror
+function imgFallbackAttr(ean) {
+  const u2 = offImgUrl(ean, 'front_fr');
+  const u3 = offImgUrl(ean, 'front');
+  return `onerror="const i=this;if(!i._fb){i._fb=1;i.src='${u2}'}else if(i._fb===1){i._fb=2;i.src='${u3}'}else{i.style.display='none';const s=i.nextElementSibling;if(s)s.style.display='block'}"`;
 }
 
 function productImgHtml(ean) {
@@ -490,32 +495,61 @@ function productImgHtml(ean) {
   return `<img class="product-img"
     src="${url}"
     alt="Foto del producto"
-    onerror="this.parentElement.classList.add('no-img')"
+    ${imgFallbackAttr(ean)}
     loading="lazy"
   />`;
 }
 
-// ── Góndolas ──────────────────────────────────────────────────────────────────
-let gondolaDefs = [];         // categorías cargadas desde el server
-let activeGondola = null;     // { id, label, emoji, color }
-let selectedShelfProduct = null; // EAN del producto seleccionado en la góndola
+// Imagen para la góndola: incluye emoji de respaldo visible cuando la foto falla
+function shelfImgHtml(ean) {
+  const url = offImgUrl(ean);
+  if (!url) return '<span class="shelf-no-img">🛒</span>';
+  return `<img class="product-img"
+    src="${url}"
+    alt="Foto del producto"
+    ${imgFallbackAttr(ean)}
+    loading="lazy"
+  /><span class="shelf-no-img" style="display:none">🛒</span>`;
+}
 
-async function initGondolas() {
-  try {
-    const res = await fetch('/api/gondolas');
-    gondolaDefs = await res.json();
-  } catch {
-    gondolaDefs = []; // el server ya tiene fallback definido
-  }
+// ── Góndolas ──────────────────────────────────────────────────────────────────
+// Definición local — las gondolas se renderizan inmediatamente sin esperar API
+const GONDOLA_DEFS_LOCAL = [
+  { id: 'lacteos',     label: 'Lácteos',           emoji: '🥛', color: '#dbeafe' },
+  { id: 'bebidas',     label: 'Bebidas',            emoji: '🥤', color: '#fce7f3' },
+  { id: 'panificados', label: 'Panificados',        emoji: '🍞', color: '#fef3c7' },
+  { id: 'carnes',      label: 'Carnes',             emoji: '🥩', color: '#fee2e2' },
+  { id: 'almacen',     label: 'Almacén',            emoji: '🫙', color: '#dcfce7' },
+  { id: 'congelados',  label: 'Congelados',         emoji: '🧊', color: '#e0f2fe' },
+  { id: 'limpieza',    label: 'Limpieza',           emoji: '🧹', color: '#f0fdf4' },
+  { id: 'higiene',     label: 'Higiene personal',   emoji: '🧴', color: '#faf5ff' },
+  { id: 'fiambres',    label: 'Fiambres',           emoji: '🥓', color: '#fff7ed' },
+  { id: 'pastas',      label: 'Pastas y Cereales',  emoji: '🍝', color: '#fefce8' },
+  { id: 'aceites',     label: 'Aceites y Salsas',   emoji: '🫒', color: '#ecfdf5' },
+  { id: 'golosinas',   label: 'Golosinas',          emoji: '🍬', color: '#fdf2f8' },
+];
+
+let gondolaDefs = GONDOLA_DEFS_LOCAL;  // ya tiene data, no espera API
+let activeGondola = null;
+let selectedShelfProduct = null;
+
+function initGondolas() {
+  // Render inmediato con datos locales
   renderGondolaHome();
+  // Luego intentar actualizar desde el server (en segundo plano)
+  fetch('/api/gondolas')
+    .then(r => r.json())
+    .then(defs => {
+      if (Array.isArray(defs) && defs.length) {
+        gondolaDefs = defs;
+        if (!activeGondola) renderGondolaHome(); // actualizar solo si no hay góndola abierta
+      }
+    })
+    .catch(() => {});  // ignorar error — ya tenemos datos locales
 }
 
 function renderGondolaHome() {
   const grid = document.getElementById('gondolaGrid');
-  if (!gondolaDefs.length) {
-    grid.innerHTML = '<p class="hint">No se pudieron cargar las secciones.</p>';
-    return;
-  }
   grid.innerHTML = gondolaDefs.map(g => `
     <button class="gondola-card" data-id="${escapeHtml(g.id)}"
       style="--gondola-bg:${escapeHtml(g.color)}">
@@ -570,12 +604,11 @@ function renderShelf(productos, color) {
 
   scroll.innerHTML = productos.map(prod => {
     const bestPrice = prod.precios[0];
-    const imgHtml   = productImgHtml(prod.ean);
     return `<div class="shelf-item" data-ean="${escapeHtml(prod.ean)}"
         data-nombre="${escapeHtml(prod.nombre)}"
         data-marca="${escapeHtml(prod.marca || '')}">
-      <div class="shelf-item-img">${imgHtml || `<span class="shelf-no-img">🛒</span>`}</div>
-      <p class="shelf-item-name">${escapeHtml(truncate(prod.nombre, 30))}</p>
+      <div class="shelf-item-img">${shelfImgHtml(prod.ean)}</div>
+      <p class="shelf-item-name">${escapeHtml(truncate(prod.nombre, 28))}</p>
       ${prod.marca ? `<p class="shelf-item-brand">${escapeHtml(prod.marca)}</p>` : ''}
       ${bestPrice
         ? `<p class="shelf-item-price">${fmt(bestPrice.precio)}</p>
@@ -608,7 +641,6 @@ function selectShelfProduct(item, productos) {
   const panel = document.getElementById('gondolaPricePanel');
   panel.style.display = '';
 
-  const subtitle = [prod.marca, prod.presentacion].filter(Boolean).join(' · ');
   const imgHtml  = productImgHtml(prod.ean);
   const minPrice = prod.precios[0]?.precio;
 
@@ -632,7 +664,8 @@ function selectShelfProduct(item, productos) {
       ${imgHtml || ''}
       <div class="product-info">
         <span class="product-name">${escapeHtml(prod.nombre)}</span>
-        ${subtitle ? `<span class="product-unit">${escapeHtml(subtitle)}</span>` : ''}
+        ${prod.marca ? `<span class="product-brand">${escapeHtml(prod.marca)}</span>` : ''}
+        ${prod.presentacion ? `<span class="product-unit">${escapeHtml(prod.presentacion)}</span>` : ''}
       </div>
     </div>
     <div class="price-list">${rows || '<p class="hint">Sin precios disponibles.</p>'}</div>

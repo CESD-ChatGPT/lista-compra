@@ -160,12 +160,23 @@ header h1 {
   color: #111827;
 }
 
-.product-unit {
+.product-brand {
+  display: block;
   font-size: 0.78rem;
+  font-weight: 600;
+  color: #2563eb;
+  margin-top: 2px;
+}
+
+.product-unit {
+  display: block;
+  font-size: 0.75rem;
   color: #6b7280;
   background: #f3f4f6;
   padding: 2px 7px;
   border-radius: 10px;
+  margin-top: 3px;
+  width: fit-content;
 }
 
 /* ── Price rows ─────────────────────────────────────────────────────────── */
@@ -420,6 +431,8 @@ header h1 {
   cursor: pointer;
   transition: transform 0.13s, border-color 0.13s, box-shadow 0.13s;
   font-family: inherit;
+  width: 100%;
+  box-sizing: border-box;
 }
 .gondola-card:hover {
   transform: translateY(-2px);
@@ -545,7 +558,13 @@ header h1 {
   background: transparent;
   border-radius: 0;
 }
-.shelf-no-img { font-size: 2rem; line-height: 1; }
+.shelf-no-img {
+  font-size: 2rem;
+  line-height: 1;
+}
+/* Cuando la imagen falla, el emoji (inicialmente oculto) se hace visible via JS */
+.shelf-item-img.no-img .product-img { display: none; }
+.shelf-item-img.no-img .shelf-no-img { display: block !important; }
 
 .shelf-item-name {
   font-size: 0.68rem;
