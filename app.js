@@ -1,11 +1,14 @@
-const LIST_KEY   = 'lista-compra-items';
-const SHOPS_KEY  = 'lista-compra-shops';
+const LIST_KEY  = 'lista-compra-items';
+const SHOPS_KEY = 'lista-compra-shops';   // cadenas habilitadas
+const LOC_KEY   = 'lista-compra-location';
 
-// ── State ───────────────────────────────────────────────────────────────────
+// ── State ────────────────────────────────────────────────────────────────────
 let shoppingList  = loadJSON(LIST_KEY, []);
-let enabledShops  = loadJSON(SHOPS_KEY, SUPERMARKETS.map(s => s.id));
+let enabledShops  = loadJSON(SHOPS_KEY, null); // null = mostrar todo
+let userLocation  = loadJSON(LOC_KEY, null);   // { lat, lng, label }
+let nearbyChains  = [];  // supermercados detectados cerca
 
-// ── Helpers ─────────────────────────────────────────────────────────────────
+// ── Helpers ──────────────────────────────────────────────────────────────────
 function loadJSON(key, def) {
   try { return JSON.parse(localStorage.getItem(key)) ?? def; }
   catch { return def; }
@@ -13,11 +16,11 @@ function loadJSON(key, def) {
 function saveJSON(key, val) { localStorage.setItem(key, JSON.stringify(val)); }
 
 function escapeHtml(s) {
-  return s.replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;');
+  return String(s)
+    .replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;');
 }
 
 function fmt(n) {
-  // Formato pesos argentinos: $ 1.200 (sin decimales para precios enteros)
   return '$ ' + Math.round(n).toLocaleString('es-AR');
 }
 
@@ -31,15 +34,97 @@ document.querySelectorAll('.tab').forEach(btn => {
   });
 });
 
-// ── Search ───────────────────────────────────────────────────────────────────
-const searchInput   = document.getElementById('searchInput');
+// ── Geolocation ───────────────────────────────────────────────────────────────
+async function detectLocation() {
+  setLocationStatus('Detectando ubicación...', 'loading');
+
+  return new Promise((resolve, reject) => {
+    if (!navigator.geolocation) {
+      setLocationStatus('Tu navegador no soporta geolocalización', 'error');
+      return reject(new Error('no-geolocation'));
+    }
+    navigator.geolocation.getCurrentPosition(
+      pos => resolve({ lat: pos.coords.latitude, lng: pos.coords.longitude }),
+      err => {
+        setLocationStatus('No se pudo obtener la ubicación', 'error');
+        reject(err);
+      },
+      { timeout: 10000, enableHighAccuracy: true }
+    );
+  });
+}
+
+function setLocationStatus(text, state = 'ok') {
+  const el = document.getElementById('locationText');
+  const bar = document.getElementById('locationBar');
+  el.textContent = text;
+  bar.dataset.state = state;
+}
+
+async function loadNearbySupermarkets(lat, lng) {
+  try {
+    const res = await fetch(`/api/supermercados/cercanos?lat=${lat}&lng=${lng}&radio=4000`);
+    if (!res.ok) throw new Error(`HTTP ${res.status}`);
+    const chains = await res.json();
+    return chains;
+  } catch (err) {
+    console.warn('[Supermercados cercanos]', err.message);
+    return [];
+  }
+}
+
+async function handleDetectLocation() {
+  document.getElementById('btnLocation').disabled = true;
+  document.getElementById('btnLocationSettings').disabled = true;
+  try {
+    const { lat, lng } = await detectLocation();
+    userLocation = { lat, lng };
+    saveJSON(LOC_KEY, userLocation);
+
+    setLocationStatus('Buscando supermercados en tu zona...', 'loading');
+    nearbyChains = await loadNearbySupermarkets(lat, lng);
+
+    if (nearbyChains.length) {
+      // Si es la primera vez, habilitar todas las cadenas detectadas
+      if (enabledShops === null) {
+        enabledShops = nearbyChains.map(c => c.id);
+        saveJSON(SHOPS_KEY, enabledShops);
+      }
+      setLocationStatus(`${nearbyChains.length} supermercado${nearbyChains.length !== 1 ? 's' : ''} encontrado${nearbyChains.length !== 1 ? 's' : ''} cerca tuyo`, 'ok');
+    } else {
+      setLocationStatus('No se encontraron supermercados cercanos (radio 4 km)', 'warn');
+    }
+
+    renderSettings();
+    // Refrescar búsqueda si hay texto
+    const q = document.getElementById('searchInput').value.trim();
+    if (q) renderSearch(q);
+
+  } catch (err) {
+    // ya manejado en detectLocation
+  } finally {
+    document.getElementById('btnLocation').disabled = false;
+    document.getElementById('btnLocationSettings').disabled = false;
+  }
+}
+
+document.getElementById('btnLocation').addEventListener('click', handleDetectLocation);
+document.getElementById('btnLocationSettings').addEventListener('click', handleDetectLocation);
+
+// ── Search ────────────────────────────────────────────────────────────────────
+const searchInput    = document.getElementById('searchInput');
 const clearSearchBtn = document.getElementById('clearSearch');
-const resultsEl     = document.getElementById('searchResults');
+const resultsEl      = document.getElementById('searchResults');
+
+let searchTimer = null;
 
 searchInput.addEventListener('input', () => {
   const q = searchInput.value.trim();
   clearSearchBtn.style.display = q ? '' : 'none';
-  renderSearch(q);
+  clearTimeout(searchTimer);
+  if (!q) { renderSearch(''); return; }
+  resultsEl.innerHTML = '<p class="hint">Buscando...</p>';
+  searchTimer = setTimeout(() => renderSearch(q), 400);
 });
 
 clearSearchBtn.addEventListener('click', () => {
@@ -49,79 +134,162 @@ clearSearchBtn.addEventListener('click', () => {
   searchInput.focus();
 });
 
-function renderSearch(query) {
+async function renderSearch(query) {
   if (!query) {
-    resultsEl.innerHTML = '<p class="hint">Escribe el nombre de un producto para comparar precios en tu zona.</p>';
+    resultsEl.innerHTML = '<p class="hint">Escribí el nombre de un producto para comparar precios en tu zona.</p>';
     return;
   }
 
-  const q = query.toLowerCase().normalize('NFD').replace(/[\u0300-\u036f]/g, '');
+  resultsEl.innerHTML = '<p class="hint loading">⏳ Buscando precios en Precios Claros...</p>';
+
+  // Intentar API real primero
+  try {
+    const params = new URLSearchParams({ q: query });
+    if (userLocation) {
+      params.set('lat', userLocation.lat);
+      params.set('lng', userLocation.lng);
+    }
+
+    const res = await fetch(`/api/productos/buscar?${params}`);
+    const data = await res.json();
+
+    if (data.source === 'precios_claros' && data.productos?.length) {
+      renderRealResults(data.productos, query);
+      return;
+    }
+  } catch (err) {
+    console.warn('[API search]', err.message);
+  }
+
+  // Fallback: datos estáticos
+  renderStaticResults(query);
+}
+
+function renderRealResults(productos, query) {
+  if (!productos.length) {
+    resultsEl.innerHTML = `<p class="hint">Sin resultados en Precios Claros para <strong>${escapeHtml(query)}</strong>.<br>Probá con otro término.</p>`;
+    return;
+  }
+
+  const filteredByShop = (precios) => {
+    if (!enabledShops || !enabledShops.length) return precios;
+    return precios.filter(p => enabledShops.includes(normalizeKey(p.cadena)));
+  };
+
+  const cards = productos.map(prod => {
+    const precios = filteredByShop(prod.precios);
+    if (!precios.length) return '';
+    const minPrecio = precios[0].precio;
+
+    const rows = precios.map(p => {
+      const isBest = p.precio === minPrecio;
+      const diff   = p.precio - minPrecio;
+      return `<div class="price-row${isBest ? ' cheapest' : ''}">
+        <span class="shop-logo">${chainLogo(p.cadena)}</span>
+        <span class="shop-name">${escapeHtml(p.cadena)}</span>
+        <span class="shop-price">${fmt(p.precio)}</span>
+        ${isBest
+          ? '<span class="best-tag">Mejor precio</span>'
+          : `<span class="diff">+${fmt(diff)}</span>`}
+        <button class="btn-add-list"
+          data-product="${escapeHtml(prod.nombre)}"
+          data-shop="${escapeHtml(p.cadena)}"
+          data-price="${p.precio}"
+          title="Añadir a mi lista">+</button>
+      </div>`;
+    }).join('');
+
+    const subtitle = [prod.marca, prod.presentacion].filter(Boolean).join(' · ');
+
+    return `<div class="product-card">
+      <div class="product-header">
+        <span class="product-name">${escapeHtml(prod.nombre)}</span>
+        ${subtitle ? `<span class="product-unit">${escapeHtml(subtitle)}</span>` : ''}
+      </div>
+      <div class="source-tag">Precios Claros 🟢</div>
+      <div class="price-list">${rows}</div>
+    </div>`;
+  }).filter(Boolean);
+
+  if (!cards.length) {
+    resultsEl.innerHTML = `<p class="hint">Sin supermercados activos para mostrar.<br>Activá supermercados en "Mis supermercados".</p>`;
+    return;
+  }
+
+  resultsEl.innerHTML = cards.join('');
+}
+
+function renderStaticResults(query) {
+  const q = query.toLowerCase().normalize('NFD').replace(/[\u0300-\u036f]/g,'');
   const matches = PRODUCTS.filter(p => {
-    const name = p.name.toLowerCase().normalize('NFD').replace(/[\u0300-\u036f]/g, '');
+    const name = p.name.toLowerCase().normalize('NFD').replace(/[\u0300-\u036f]/g,'');
     return name.includes(q);
   });
 
-  if (matches.length === 0) {
-    resultsEl.innerHTML = '<p class="hint">Sin resultados para <strong>' + escapeHtml(query) + '</strong>.</p>';
+  if (!matches.length) {
+    resultsEl.innerHTML = `<p class="hint">Sin resultados para <strong>${escapeHtml(query)}</strong>.</p>`;
     return;
   }
 
-  resultsEl.innerHTML = matches.map(p => buildProductCard(p)).join('');
-}
+  // Filtrar por supermercados activos
+  const activeShopIds = enabledShops
+    ? SUPERMARKETS.filter(s => enabledShops.includes(s.id)).map(s => s.id)
+    : SUPERMARKETS.map(s => s.id);
 
-function buildProductCard(product) {
-  const active = SUPERMARKETS.filter(s => enabledShops.includes(s.id));
-  if (active.length === 0) {
+  const cards = matches.map(prod => {
+    const rows = SUPERMARKETS
+      .filter(s => activeShopIds.includes(s.id))
+      .map(s => ({ s, price: prod.prices[s.id] ?? null }))
+      .filter(r => r.price !== null)
+      .sort((a, b) => a.price - b.price);
+
+    if (!rows.length) return '';
+    const minPrice = rows[0].price;
+
+    const rowsHtml = rows.map(r => {
+      const isBest = r.price === minPrice;
+      return `<div class="price-row${isBest ? ' cheapest' : ''}">
+        <span class="shop-logo">${r.s.logo}</span>
+        <span class="shop-name">${escapeHtml(r.s.name)}</span>
+        <span class="shop-price">${fmt(r.price)}</span>
+        ${isBest ? '<span class="best-tag">Mejor precio</span>' : `<span class="diff">+${fmt(r.price - minPrice)}</span>`}
+        <button class="btn-add-list"
+          data-product="${escapeHtml(prod.name)}"
+          data-shop="${escapeHtml(r.s.name)}"
+          data-price="${r.price}"
+          title="Añadir a mi lista">+</button>
+      </div>`;
+    }).join('');
+
     return `<div class="product-card">
-      <div class="product-header"><span class="product-name">${escapeHtml(product.name)}</span><span class="product-unit">${escapeHtml(product.unit)}</span></div>
-      <p class="hint">Activa supermercados en la pestaña "Mis supermercados".</p>
+      <div class="product-header">
+        <span class="product-name">${escapeHtml(prod.name)}</span>
+        <span class="product-unit">${escapeHtml(prod.unit)}</span>
+      </div>
+      <div class="source-tag fallback">Precios de referencia ⚠️</div>
+      <div class="price-list">${rowsHtml}</div>
     </div>`;
-  }
+  }).filter(Boolean);
 
-  const rows = active
-    .map(s => ({ s, price: product.prices[s.id] ?? null }))
-    .filter(r => r.price !== null)
-    .sort((a, b) => a.price - b.price);
-
-  if (rows.length === 0) return '';
-
-  const minPrice = rows[0].price;
-
-  const rowsHtml = rows.map((r, i) => {
-    const isCheapest = r.price === minPrice;
-    return `<div class="price-row${isCheapest ? ' cheapest' : ''}">
-      <span class="shop-logo">${r.s.logo}</span>
-      <span class="shop-name">${escapeHtml(r.s.name)}</span>
-      <span class="shop-price">${fmt(r.price)}</span>
-      ${isCheapest ? '<span class="best-tag">Mejor precio</span>' : `<span class="diff">+${fmt(r.price - minPrice)}</span>`}
-      <button class="btn-add-list" data-product="${escapeHtml(product.name)}" data-shop="${escapeHtml(r.s.name)}" data-price="${r.price}" title="Añadir a mi lista">+</button>
-    </div>`;
-  }).join('');
-
-  return `<div class="product-card">
-    <div class="product-header">
-      <span class="product-name">${escapeHtml(product.name)}</span>
-      <span class="product-unit">${escapeHtml(product.unit)}</span>
-    </div>
-    <div class="price-list">${rowsHtml}</div>
-  </div>`;
+  resultsEl.innerHTML = cards.length
+    ? cards.join('')
+    : `<p class="hint">Sin supermercados activos para mostrar.</p>`;
 }
 
 resultsEl.addEventListener('click', e => {
   const btn = e.target.closest('.btn-add-list');
   if (!btn) return;
   addToList(btn.dataset.product, btn.dataset.shop, parseFloat(btn.dataset.price));
-  // Visual feedback
   btn.textContent = '✓';
   btn.classList.add('added');
-  setTimeout(() => { btn.textContent = '+'; btn.classList.remove('added'); }, 1200);
+  setTimeout(() => { btn.textContent = '+'; btn.classList.remove('added'); }, 1400);
 });
 
-// ── Shopping list ────────────────────────────────────────────────────────────
-const itemListEl   = document.getElementById('itemList');
+// ── Shopping list ─────────────────────────────────────────────────────────────
+const itemListEl    = document.getElementById('itemList');
 const listActionsEl = document.getElementById('listActions');
-const listCountEl  = document.getElementById('listCount');
-const manualInput  = document.getElementById('manualInput');
+const listCountEl   = document.getElementById('listCount');
+const manualInput   = document.getElementById('manualInput');
 
 document.getElementById('manualAdd').addEventListener('click', () => {
   const val = manualInput.value.trim();
@@ -165,13 +333,12 @@ function addToList(name, shop = null, price = null) {
 }
 
 function renderList() {
-  if (shoppingList.length === 0) {
-    itemListEl.innerHTML = '<li class="empty-list">Sin artículos. Busca un producto o añádelo manualmente.</li>';
+  if (!shoppingList.length) {
+    itemListEl.innerHTML = '<li class="empty-list">Sin artículos. Buscá un producto o añadilo manualmente.</li>';
     listActionsEl.style.display = 'none';
     updateListBadge();
     return;
   }
-
   itemListEl.innerHTML = shoppingList.map(item => {
     const meta = item.shop
       ? `<span class="item-meta">${escapeHtml(item.shop)}${item.price ? ' · ' + fmt(item.price) : ''}</span>`
@@ -179,13 +346,11 @@ function renderList() {
     return `<li class="item${item.done ? ' done' : ''}" data-id="${item.id}">
       <div class="item-check" title="Marcar"></div>
       <div class="item-text">
-        <span class="item-name">${escapeHtml(item.name)}</span>
-        ${meta}
+        <span class="item-name">${escapeHtml(item.name)}</span>${meta}
       </div>
       <button class="btn-delete" data-action="delete" title="Eliminar">✕</button>
     </li>`;
   }).join('');
-
   listActionsEl.style.display = 'flex';
   updateListBadge();
 }
@@ -195,36 +360,94 @@ function updateListBadge() {
   listCountEl.textContent = pending > 0 ? pending : '';
 }
 
-// ── Supermarkets settings ────────────────────────────────────────────────────
+// ── Settings: supermercados ──────────────────────────────────────────────────
 function renderSettings() {
   const el = document.getElementById('supermarketList');
-  el.innerHTML = SUPERMARKETS.map(s => {
-    const on = enabledShops.includes(s.id);
+
+  // Combinar los de la API + los estáticos como fallback
+  const allChains = nearbyChains.length
+    ? nearbyChains
+    : SUPERMARKETS.map(s => ({ id: s.id, name: s.name }));
+
+  document.getElementById('settingsHint').textContent = nearbyChains.length
+    ? `${nearbyChains.length} supermercado${nearbyChains.length !== 1 ? 's' : ''} detectado${nearbyChains.length !== 1 ? 's' : ''} en tu zona (radio 4 km).`
+    : 'Detectá tu ubicación para ver los supermercados de tu zona.';
+
+  if (!allChains.length) {
+    el.innerHTML = '<li class="empty-settings">Sin supermercados detectados aún.</li>';
+    return;
+  }
+
+  const active = enabledShops ?? allChains.map(c => c.id);
+
+  el.innerHTML = allChains.map(c => {
+    const on = active.includes(c.id);
+    const logo = chainLogo(c.name);
+    const branches = c.branches?.length ? `<span class="branch-count">${c.branches.length} sucursal${c.branches.length !== 1 ? 'es' : ''}</span>` : '';
     return `<li class="supermarket-item">
       <label class="toggle-label">
-        <input type="checkbox" data-id="${s.id}"${on ? ' checked' : ''} />
+        <input type="checkbox" data-id="${escapeHtml(c.id)}"${on ? ' checked' : ''} />
         <span class="toggle-slider"></span>
       </label>
-      <span class="shop-logo">${s.logo}</span>
-      <span class="supermarket-name">${escapeHtml(s.name)}</span>
+      <span class="shop-logo">${logo}</span>
+      <span class="supermarket-name">${escapeHtml(c.name)}</span>
+      ${branches}
     </li>`;
   }).join('');
 
   el.querySelectorAll('input[type=checkbox]').forEach(cb => {
     cb.addEventListener('change', () => {
-      if (cb.checked) {
-        if (!enabledShops.includes(cb.dataset.id)) enabledShops.push(cb.dataset.id);
-      } else {
-        enabledShops = enabledShops.filter(id => id !== cb.dataset.id);
-      }
+      const allIds = allChains.map(c => c.id);
+      const prev   = enabledShops ?? allIds;
+      enabledShops = cb.checked
+        ? [...new Set([...prev, cb.dataset.id])]
+        : prev.filter(id => id !== cb.dataset.id);
       saveJSON(SHOPS_KEY, enabledShops);
-      // Refresh search if visible
-      if (searchInput.value.trim()) renderSearch(searchInput.value.trim());
+      const q = document.getElementById('searchInput').value.trim();
+      if (q) renderSearch(q);
     });
   });
 }
 
-// ── Init ─────────────────────────────────────────────────────────────────────
+// ── Utils ─────────────────────────────────────────────────────────────────────
+function normalizeKey(name) {
+  return name.toLowerCase().replace(/\s+/g, '-').replace(/[^a-z0-9-]/g, '');
+}
+
+function chainLogo(name) {
+  const n = name.toLowerCase();
+  if (n.includes('coto'))       return '🔴';
+  if (n.includes('carrefour'))  return '🔵';
+  if (n.includes('jumbo'))      return '🟢';
+  if (n.includes('dia'))        return '🟥';
+  if (n.includes('changom') || n.includes('walmart')) return '🟠';
+  if (n.includes('vea'))        return '🔷';
+  if (n.includes('disco'))      return '🟤';
+  if (n.includes('an') && n.includes('nima')) return '🟡';
+  if (n.includes('libertad'))   return '🟣';
+  if (n.includes('mayorista'))  return '🏪';
+  return '🏬';
+}
+
+// ── Init ──────────────────────────────────────────────────────────────────────
 renderSearch('');
 renderList();
 renderSettings();
+
+// Si ya tenemos ubicación guardada, cargar supermercados cercanos
+if (userLocation) {
+  setLocationStatus('Actualizando supermercados de tu zona...', 'loading');
+  loadNearbySupermarkets(userLocation.lat, userLocation.lng).then(chains => {
+    if (chains.length) {
+      nearbyChains = chains;
+      if (enabledShops === null) {
+        enabledShops = chains.map(c => c.id);
+        saveJSON(SHOPS_KEY, enabledShops);
+      }
+      setLocationStatus(`${chains.length} supermercados encontrados cerca tuyo`, 'ok');
+      renderSettings();
+    } else {
+      setLocationStatus('Ubicación guardada — sin supermercados detectados', 'warn');
+    }
+  });
+}

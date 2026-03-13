@@ -19,8 +19,17 @@
 
     <!-- ===== TAB: BUSCAR PRECIOS ===== -->
     <section class="tab-content active" id="tab-search">
+
+      <!-- Barra de ubicación -->
+      <div class="location-bar" id="locationBar">
+        <span class="location-icon">📍</span>
+        <span class="location-text" id="locationText">Detectá tu ubicación para ver supermercados de tu zona</span>
+        <button class="btn-location" id="btnLocation">Detectar</button>
+      </div>
+
+      <!-- Barra de búsqueda -->
       <div class="search-bar">
-        <input type="text" id="searchInput" placeholder="Buscar producto..." autocomplete="off" />
+        <input type="text" id="searchInput" placeholder="Buscar producto (ej: leche, arroz...)" autocomplete="off" />
         <button id="clearSearch" class="btn-icon" title="Limpiar" style="display:none">✕</button>
       </div>
 
@@ -42,8 +51,13 @@
 
     <!-- ===== TAB: MIS SUPERMERCADOS ===== -->
     <section class="tab-content" id="tab-settings">
-      <p class="settings-hint">Activa los supermercados de tu zona para ver sus precios en las búsquedas.</p>
-      <ul class="supermarket-list" id="supermarketList"></ul>
+      <div class="settings-top">
+        <p class="settings-hint" id="settingsHint">Detectá tu ubicación para ver los supermercados de tu zona.</p>
+        <button class="btn-location-sm" id="btnLocationSettings">📍 Detectar ubicación</button>
+      </div>
+      <ul class="supermarket-list" id="supermarketList">
+        <li class="empty-settings">Sin supermercados detectados aún.</li>
+      </ul>
     </section>
   </div>
 
