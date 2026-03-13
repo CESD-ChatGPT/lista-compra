@@ -495,10 +495,180 @@ function productImgHtml(ean) {
   />`;
 }
 
+// ── Góndolas ──────────────────────────────────────────────────────────────────
+let gondolaDefs = [];         // categorías cargadas desde el server
+let activeGondola = null;     // { id, label, emoji, color }
+let selectedShelfProduct = null; // EAN del producto seleccionado en la góndola
+
+async function initGondolas() {
+  try {
+    const res = await fetch('/api/gondolas');
+    gondolaDefs = await res.json();
+  } catch {
+    gondolaDefs = []; // el server ya tiene fallback definido
+  }
+  renderGondolaHome();
+}
+
+function renderGondolaHome() {
+  const grid = document.getElementById('gondolaGrid');
+  if (!gondolaDefs.length) {
+    grid.innerHTML = '<p class="hint">No se pudieron cargar las secciones.</p>';
+    return;
+  }
+  grid.innerHTML = gondolaDefs.map(g => `
+    <button class="gondola-card" data-id="${escapeHtml(g.id)}"
+      style="--gondola-bg:${escapeHtml(g.color)}">
+      <span class="gondola-card-emoji">${g.emoji}</span>
+      <span class="gondola-card-label">${escapeHtml(g.label)}</span>
+    </button>
+  `).join('');
+
+  grid.querySelectorAll('.gondola-card').forEach(btn => {
+    btn.addEventListener('click', () => {
+      const def = gondolaDefs.find(g => g.id === btn.dataset.id);
+      if (def) openGondola(def);
+    });
+  });
+}
+
+async function openGondola(def) {
+  activeGondola = def;
+  selectedShelfProduct = null;
+
+  document.getElementById('gondolaHome').style.display  = 'none';
+  document.getElementById('gondolaShelf').style.display = '';
+  document.getElementById('gondolaPricePanel').style.display = 'none';
+
+  const titleEl = document.getElementById('gondolaShelfTitle');
+  titleEl.textContent = `${def.emoji} ${def.label}`;
+  titleEl.style.background = def.color;
+
+  const scroll = document.getElementById('gondolaShelfScroll');
+  scroll.innerHTML = '<div class="gondola-loading">⏳ Cargando góndola...</div>';
+
+  try {
+    const params = new URLSearchParams({ gondola: def.id });
+    if (userLocation) { params.set('lat', userLocation.lat); params.set('lng', userLocation.lng); }
+
+    const res  = await fetch(`/api/gondolas/articulos?${params}`);
+    const data = await res.json();
+
+    if (!data.productos?.length) {
+      scroll.innerHTML = '<p class="hint">Sin productos disponibles en esta sección.</p>';
+      return;
+    }
+    renderShelf(data.productos, def.color);
+  } catch (err) {
+    scroll.innerHTML = `<p class="hint">Error al cargar la góndola: ${escapeHtml(err.message)}</p>`;
+  }
+}
+
+function renderShelf(productos, color) {
+  const scroll = document.getElementById('gondolaShelfScroll');
+  scroll.style.setProperty('--shelf-color', color);
+
+  scroll.innerHTML = productos.map(prod => {
+    const bestPrice = prod.precios[0];
+    const imgHtml   = productImgHtml(prod.ean);
+    return `<div class="shelf-item" data-ean="${escapeHtml(prod.ean)}"
+        data-nombre="${escapeHtml(prod.nombre)}"
+        data-marca="${escapeHtml(prod.marca || '')}">
+      <div class="shelf-item-img">${imgHtml || `<span class="shelf-no-img">🛒</span>`}</div>
+      <p class="shelf-item-name">${escapeHtml(truncate(prod.nombre, 30))}</p>
+      ${prod.marca ? `<p class="shelf-item-brand">${escapeHtml(prod.marca)}</p>` : ''}
+      ${bestPrice
+        ? `<p class="shelf-item-price">${fmt(bestPrice.precio)}</p>
+           <p class="shelf-item-chain">${escapeHtml(bestPrice.cadena)}</p>`
+        : `<p class="shelf-item-price no-price">Sin precio</p>`}
+    </div>`;
+  }).join('');
+
+  scroll.querySelectorAll('.shelf-item').forEach(item => {
+    item.addEventListener('click', () => selectShelfProduct(item, productos));
+  });
+}
+
+function selectShelfProduct(item, productos) {
+  // Toggle si hacen click al mismo
+  if (selectedShelfProduct === item.dataset.ean) {
+    selectedShelfProduct = null;
+    document.getElementById('gondolaPricePanel').style.display = 'none';
+    document.querySelectorAll('.shelf-item').forEach(i => i.classList.remove('selected'));
+    return;
+  }
+
+  selectedShelfProduct = item.dataset.ean;
+  document.querySelectorAll('.shelf-item').forEach(i => i.classList.remove('selected'));
+  item.classList.add('selected');
+
+  const prod = productos.find(p => p.ean === item.dataset.ean);
+  if (!prod) return;
+
+  const panel = document.getElementById('gondolaPricePanel');
+  panel.style.display = '';
+
+  const subtitle = [prod.marca, prod.presentacion].filter(Boolean).join(' · ');
+  const imgHtml  = productImgHtml(prod.ean);
+  const minPrice = prod.precios[0]?.precio;
+
+  const rows = prod.precios.map(p => {
+    const isBest = p.precio === minPrice;
+    return `<div class="price-row${isBest ? ' cheapest' : ''}">
+      <span class="shop-logo">${chainLogoHtml(p.cadena)}</span>
+      <span class="shop-name">${escapeHtml(p.cadena)}</span>
+      <span class="shop-price">${fmt(p.precio)}</span>
+      ${isBest ? '<span class="best-tag">Mejor precio</span>' : `<span class="diff">+${fmt(p.precio - minPrice)}</span>`}
+      <button class="btn-add-list"
+        data-product="${escapeHtml(prod.nombre)}"
+        data-shop="${escapeHtml(p.cadena)}"
+        data-price="${p.precio}"
+        title="Añadir a mi lista">+</button>
+    </div>`;
+  }).join('');
+
+  panel.innerHTML = `
+    <div class="gondola-price-header">
+      ${imgHtml || ''}
+      <div class="product-info">
+        <span class="product-name">${escapeHtml(prod.nombre)}</span>
+        ${subtitle ? `<span class="product-unit">${escapeHtml(subtitle)}</span>` : ''}
+      </div>
+    </div>
+    <div class="price-list">${rows || '<p class="hint">Sin precios disponibles.</p>'}</div>
+  `;
+
+  panel.scrollIntoView({ behavior: 'smooth', block: 'nearest' });
+}
+
+// Evento "Añadir a lista" dentro del panel de la góndola
+document.getElementById('gondolaPricePanel').addEventListener('click', e => {
+  const btn = e.target.closest('.btn-add-list');
+  if (!btn) return;
+  addToList(btn.dataset.product, btn.dataset.shop, parseFloat(btn.dataset.price));
+  btn.textContent = '✓';
+  btn.classList.add('added');
+  setTimeout(() => { btn.textContent = '+'; btn.classList.remove('added'); }, 1400);
+});
+
+// Botón volver
+document.getElementById('btnBackGondola').addEventListener('click', () => {
+  activeGondola = null;
+  selectedShelfProduct = null;
+  document.getElementById('gondolaHome').style.display  = '';
+  document.getElementById('gondolaShelf').style.display = 'none';
+  document.getElementById('gondolaPricePanel').style.display = 'none';
+});
+
+function truncate(str, max) {
+  return str.length <= max ? str : str.slice(0, max - 1) + '…';
+}
+
 // ── Init ──────────────────────────────────────────────────────────────────────
 renderSearch('');
 renderList();
 renderSettings();
+initGondolas();
 
 // Si ya tenemos ubicación guardada, cargar supermercados cercanos
 if (userLocation) {

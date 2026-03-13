@@ -11,9 +11,10 @@
     <header>
       <h1>🛒 Lista de la Compra</h1>
       <nav class="tabs">
-        <button class="tab active" data-tab="search">Buscar precios</button>
+        <button class="tab active" data-tab="search">Buscar</button>
+        <button class="tab" data-tab="gondola">Góndolas</button>
         <button class="tab" data-tab="list">Mi lista <span class="badge-count" id="listCount"></span></button>
-        <button class="tab" data-tab="settings">Mis supermercados</button>
+        <button class="tab" data-tab="settings">Mis supers</button>
       </nav>
     </header>
 
@@ -34,6 +35,30 @@
       </div>
 
       <div id="searchResults"></div>
+    </section>
+
+    <!-- ===== TAB: GÓNDOLAS ===== -->
+    <section class="tab-content" id="tab-gondola">
+      <!-- Vista 1: grilla de categorías -->
+      <div id="gondolaHome">
+        <p class="gondola-intro">Explorá las secciones del supermercado y compará precios.</p>
+        <div class="gondola-grid" id="gondolaGrid">
+          <p class="hint">Cargando secciones...</p>
+        </div>
+      </div>
+
+      <!-- Vista 2: góndola de una sección -->
+      <div id="gondolaShelf" style="display:none">
+        <div class="gondola-shelf-header" id="gondolaShelfHeader">
+          <button class="btn-back" id="btnBackGondola">← Góndolas</button>
+          <span class="gondola-shelf-title" id="gondolaShelfTitle"></span>
+        </div>
+        <div class="gondola-shelf-scroll" id="gondolaShelfScroll">
+          <!-- productos en la góndola -->
+        </div>
+        <!-- Comparación de precios al hacer clic en un producto -->
+        <div class="gondola-price-panel" id="gondolaPricePanel" style="display:none"></div>
+      </div>
     </section>
 
     <!-- ===== TAB: MI LISTA ===== -->

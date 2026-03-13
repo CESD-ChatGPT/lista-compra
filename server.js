@@ -209,6 +209,107 @@ app.get('/api/sucursales/buscar', async (req, res) => {
   }
 });
 
+// ── Góndolas: definición de secciones con términos de búsqueda ───────────────
+const GONDOLA_DEFS = [
+  { id: 'lacteos',     label: 'Lácteos',           emoji: '🥛', color: '#dbeafe', terms: ['leche', 'yogur', 'queso', 'crema', 'manteca'] },
+  { id: 'bebidas',     label: 'Bebidas',            emoji: '🥤', color: '#fce7f3', terms: ['gaseosa', 'agua mineral', 'jugo', 'cerveza', 'soda'] },
+  { id: 'panificados', label: 'Panificados',        emoji: '🍞', color: '#fef3c7', terms: ['pan lactal', 'galletitas', 'bizcochos', 'tostadas'] },
+  { id: 'carnes',      label: 'Carnes',             emoji: '🥩', color: '#fee2e2', terms: ['carne vacuna', 'pollo', 'cerdo', 'pescado'] },
+  { id: 'almacen',     label: 'Almacén',            emoji: '🫙', color: '#dcfce7', terms: ['arroz', 'azucar', 'harina', 'sal fina', 'aceite girasol'] },
+  { id: 'congelados',  label: 'Congelados',         emoji: '🧊', color: '#e0f2fe', terms: ['hamburguesa congelada', 'helado', 'pizza congelada', 'vegetales congelados'] },
+  { id: 'limpieza',    label: 'Limpieza',           emoji: '🧹', color: '#f0fdf4', terms: ['detergente', 'lavandina', 'desinfectante', 'limpiapisos', 'esponjas'] },
+  { id: 'higiene',     label: 'Higiene personal',   emoji: '🧴', color: '#faf5ff', terms: ['shampoo', 'dentifrico', 'desodorante', 'jabon tocador'] },
+  { id: 'fiambres',    label: 'Fiambres',           emoji: '🥓', color: '#fff7ed', terms: ['jamon cocido', 'salame', 'mortadela', 'queso en barra'] },
+  { id: 'pastas',      label: 'Pastas y Cereales',  emoji: '🍝', color: '#fefce8', terms: ['fideos spaghetti', 'fideos moñito', 'cereales', 'avena'] },
+  { id: 'aceites',     label: 'Aceites y Salsas',   emoji: '🫒', color: '#ecfdf5', terms: ['aceite oliva', 'salsa tomate', 'mayonesa', 'vinagre', 'ketchup'] },
+  { id: 'golosinas',   label: 'Golosinas',          emoji: '🍬', color: '#fdf2f8', terms: ['chocolate', 'alfajor', 'chicle', 'caramelo', 'turron'] },
+];
+
+// ────────────────────────────────────────────────────────────────────────────
+// GET /api/gondolas — lista de secciones disponibles
+// ────────────────────────────────────────────────────────────────────────────
+app.get('/api/gondolas', (_req, res) => {
+  res.json(GONDOLA_DEFS.map(({ id, label, emoji, color }) => ({ id, label, emoji, color })));
+});
+
+// ────────────────────────────────────────────────────────────────────────────
+// GET /api/gondolas/articulos?gondola=lacteos&lat=-34.6&lng=-58.4
+// Busca artículos de la sección combinando varios términos, devuelve
+// productos con imagen y mejor precio por cadena (carga progresiva).
+// ────────────────────────────────────────────────────────────────────────────
+app.get('/api/gondolas/articulos', async (req, res) => {
+  const { gondola, lat, lng } = req.query;
+  if (!gondola) return res.status(400).json({ error: 'Falta parámetro gondola' });
+
+  const def = GONDOLA_DEFS.find(g => g.id === gondola);
+  if (!def) return res.status(404).json({ error: 'Góndola no encontrada' });
+
+  try {
+    // Buscar artículos para cada término en paralelo
+    const searches = await Promise.allSettled(
+      def.terms.map(term =>
+        pcFetch(`${PC}/articulos/?nombre=${encodeURIComponent(term)}&limit=6`)
+      )
+    );
+
+    // Combinar y deduplicar por EAN
+    const seen = new Set();
+    const articulos = [];
+    for (const r of searches) {
+      if (r.status !== 'fulfilled') continue;
+      for (const art of (r.value.results || r.value || [])) {
+        if (!art.id || seen.has(art.id)) continue;
+        seen.add(art.id);
+        articulos.push(art);
+      }
+    }
+
+    if (!articulos.length) return res.json({ gondola, productos: [] });
+
+    // Para cada artículo obtener precios (paralelo, máximo 15)
+    const withPrices = await Promise.allSettled(
+      articulos.slice(0, 15).map(async art => {
+        let url = `${PC}/precios/?articulo=${encodeURIComponent(art.id)}&limit=100`;
+        if (lat && lng) url += `&latitud=${lat}&longitud=${lng}&distancia=10`;
+
+        const prData = await pcFetch(url).catch(() => ({ results: [] }));
+        const precios = prData.results || prData || [];
+
+        const porCadena = {};
+        for (const p of precios) {
+          const cadena = normalizeChain(
+            p.sucursal_nombre || p.sucursalNombre || p.cadena || p.comercioRazonSocial || ''
+          );
+          const precio = parseFloat(p.precio || p.precioLista || 0);
+          if (!precio || !cadena) continue;
+          if (!porCadena[cadena] || precio < porCadena[cadena].precio) {
+            porCadena[cadena] = { cadena, precio };
+          }
+        }
+
+        const preciosList = Object.values(porCadena).sort((a, b) => a.precio - b.precio);
+
+        return {
+          ean: art.id,
+          nombre: art.nombre || art.productoNombre || '?',
+          marca:  art.marca  || art.marcaNombre   || null,
+          presentacion: art.presentacion || null,
+          precios: preciosList,
+        };
+      })
+    );
+
+    const productos = withPrices
+      .filter(r => r.status === 'fulfilled' && r.value.precios.length > 0)
+      .map(r => r.value);
+
+    res.json({ gondola, productos });
+  } catch (err) {
+    console.error('[Góndola]', err.message);
+    res.status(502).json({ error: 'Error al cargar la góndola', detail: err.message });
+  }
+});
+
 // ────────────────────────────────────────────────────────────────────────────
 app.listen(PORT, () => {
   console.log(`\n🛒 Lista de la Compra corriendo en http://localhost:${PORT}`);
