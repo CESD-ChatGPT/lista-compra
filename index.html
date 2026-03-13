@@ -10,44 +10,44 @@
   <div class="app">
     <header>
       <h1>🛒 Lista de la Compra</h1>
-      <p class="subtitle" id="summary">0 artículos pendientes</p>
+      <nav class="tabs">
+        <button class="tab active" data-tab="search">Buscar precios</button>
+        <button class="tab" data-tab="list">Mi lista <span class="badge-count" id="listCount"></span></button>
+        <button class="tab" data-tab="settings">Mis supermercados</button>
+      </nav>
     </header>
 
-    <form class="add-form" id="addForm">
-      <input
-        type="text"
-        id="itemInput"
-        placeholder="Añadir artículo..."
-        autocomplete="off"
-        maxlength="60"
-      />
-      <select id="categorySelect">
-        <option value="otros">Otros</option>
-        <option value="frutas">Frutas y Verduras</option>
-        <option value="lacteos">Lácteos</option>
-        <option value="carnes">Carnes y Pescados</option>
-        <option value="panaderia">Panadería</option>
-        <option value="bebidas">Bebidas</option>
-        <option value="limpieza">Limpieza</option>
-        <option value="congelados">Congelados</option>
-      </select>
-      <button type="submit">Añadir</button>
-    </form>
+    <!-- ===== TAB: BUSCAR PRECIOS ===== -->
+    <section class="tab-content active" id="tab-search">
+      <div class="search-bar">
+        <input type="text" id="searchInput" placeholder="Buscar producto..." autocomplete="off" />
+        <button id="clearSearch" class="btn-icon" title="Limpiar" style="display:none">✕</button>
+      </div>
 
-    <div class="filters">
-      <button class="filter-btn active" data-filter="all">Todos</button>
-      <button class="filter-btn" data-filter="pending">Pendientes</button>
-      <button class="filter-btn" data-filter="done">Comprados</button>
-    </div>
+      <div id="searchResults"></div>
+    </section>
 
-    <ul class="item-list" id="itemList"></ul>
+    <!-- ===== TAB: MI LISTA ===== -->
+    <section class="tab-content" id="tab-list">
+      <div class="add-form-simple">
+        <input type="text" id="manualInput" placeholder="Añadir artículo manualmente..." maxlength="60" />
+        <button id="manualAdd">Añadir</button>
+      </div>
+      <ul class="item-list" id="itemList"></ul>
+      <div class="list-actions" id="listActions" style="display:none">
+        <button class="btn-secondary" id="clearDone">Eliminar comprados</button>
+        <button class="btn-danger" id="clearAll">Vaciar lista</button>
+      </div>
+    </section>
 
-    <div class="actions" id="actionsBar" style="display:none">
-      <button class="btn-clear" id="clearDone">Eliminar comprados</button>
-      <button class="btn-clear-all" id="clearAll">Vaciar lista</button>
-    </div>
+    <!-- ===== TAB: MIS SUPERMERCADOS ===== -->
+    <section class="tab-content" id="tab-settings">
+      <p class="settings-hint">Activa los supermercados de tu zona para ver sus precios en las búsquedas.</p>
+      <ul class="supermarket-list" id="supermarketList"></ul>
+    </section>
   </div>
 
+  <script src="data.js"></script>
   <script src="app.js"></script>
 </body>
 </html>
