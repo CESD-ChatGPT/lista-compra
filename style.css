@@ -130,14 +130,31 @@ header h1 {
   to   { opacity: 1; transform: translateY(0); }
 }
 
+/* ── Product image ──────────────────────────────────────────────────────── */
 .product-header {
   display: flex;
-  align-items: baseline;
-  gap: 8px;
+  align-items: center;
+  gap: 12px;
   margin-bottom: 10px;
 }
 
+.product-img {
+  width: 64px;
+  height: 64px;
+  object-fit: contain;
+  border-radius: 10px;
+  border: 1px solid #e5e7eb;
+  background: #f9fafb;
+  flex-shrink: 0;
+  transition: opacity 0.2s;
+}
+
+.product-header.no-img .product-img { display: none; }
+
+.product-info { flex: 1; min-width: 0; }
+
 .product-name {
+  display: block;
   font-size: 1rem;
   font-weight: 700;
   color: #111827;
@@ -170,7 +187,21 @@ header h1 {
   background: #f0fdf4;
 }
 
-.shop-logo { font-size: 1rem; flex-shrink: 0; }
+/* ── Chain logos ────────────────────────────────────────────────────────── */
+.shop-logo { display: flex; align-items: center; flex-shrink: 0; width: 28px; justify-content: center; }
+
+.chain-logo-img {
+  width: 22px;
+  height: 22px;
+  object-fit: contain;
+  border-radius: 4px;
+}
+
+.chain-emoji { font-size: 1rem; line-height: 1; }
+
+/* Larger version in settings list */
+.shop-logo-lg { width: 36px; }
+.shop-logo-lg .chain-logo-img { width: 28px; height: 28px; border-radius: 6px; }
 
 .shop-name {
   flex: 1;

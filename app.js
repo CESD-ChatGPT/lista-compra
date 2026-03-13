@@ -185,7 +185,7 @@ function renderRealResults(productos, query) {
       const isBest = p.precio === minPrecio;
       const diff   = p.precio - minPrecio;
       return `<div class="price-row${isBest ? ' cheapest' : ''}">
-        <span class="shop-logo">${chainLogo(p.cadena)}</span>
+        <span class="shop-logo">${chainLogoHtml(p.cadena)}</span>
         <span class="shop-name">${escapeHtml(p.cadena)}</span>
         <span class="shop-price">${fmt(p.precio)}</span>
         ${isBest
@@ -203,8 +203,11 @@ function renderRealResults(productos, query) {
 
     return `<div class="product-card">
       <div class="product-header">
-        <span class="product-name">${escapeHtml(prod.nombre)}</span>
-        ${subtitle ? `<span class="product-unit">${escapeHtml(subtitle)}</span>` : ''}
+        ${productImgHtml(prod.ean)}
+        <div class="product-info">
+          <span class="product-name">${escapeHtml(prod.nombre)}</span>
+          ${subtitle ? `<span class="product-unit">${escapeHtml(subtitle)}</span>` : ''}
+        </div>
       </div>
       <div class="source-tag">Precios Claros 🟢</div>
       <div class="price-list">${rows}</div>
@@ -249,7 +252,7 @@ function renderStaticResults(query) {
     const rowsHtml = rows.map(r => {
       const isBest = r.price === minPrice;
       return `<div class="price-row${isBest ? ' cheapest' : ''}">
-        <span class="shop-logo">${r.s.logo}</span>
+        <span class="shop-logo">${chainLogoHtml(r.s.name)}</span>
         <span class="shop-name">${escapeHtml(r.s.name)}</span>
         <span class="shop-price">${fmt(r.price)}</span>
         ${isBest ? '<span class="best-tag">Mejor precio</span>' : `<span class="diff">+${fmt(r.price - minPrice)}</span>`}
@@ -263,8 +266,11 @@ function renderStaticResults(query) {
 
     return `<div class="product-card">
       <div class="product-header">
-        <span class="product-name">${escapeHtml(prod.name)}</span>
-        <span class="product-unit">${escapeHtml(prod.unit)}</span>
+        ${productImgHtml(prod.ean ?? null)}
+        <div class="product-info">
+          <span class="product-name">${escapeHtml(prod.name)}</span>
+          <span class="product-unit">${escapeHtml(prod.unit)}</span>
+        </div>
       </div>
       <div class="source-tag fallback">Precios de referencia ⚠️</div>
       <div class="price-list">${rowsHtml}</div>
@@ -382,14 +388,13 @@ function renderSettings() {
 
   el.innerHTML = allChains.map(c => {
     const on = active.includes(c.id);
-    const logo = chainLogo(c.name);
     const branches = c.branches?.length ? `<span class="branch-count">${c.branches.length} sucursal${c.branches.length !== 1 ? 'es' : ''}</span>` : '';
     return `<li class="supermarket-item">
       <label class="toggle-label">
         <input type="checkbox" data-id="${escapeHtml(c.id)}"${on ? ' checked' : ''} />
         <span class="toggle-slider"></span>
       </label>
-      <span class="shop-logo">${logo}</span>
+      <span class="shop-logo shop-logo-lg">${chainLogoHtml(c.name)}</span>
       <span class="supermarket-name">${escapeHtml(c.name)}</span>
       ${branches}
     </li>`;
@@ -414,19 +419,80 @@ function normalizeKey(name) {
   return name.toLowerCase().replace(/\s+/g, '-').replace(/[^a-z0-9-]/g, '');
 }
 
-function chainLogo(name) {
+// Logos reales de cadenas via Clearbit (fallback a emoji)
+const CHAIN_DOMAINS = {
+  'coto':        'coto.com.ar',
+  'carrefour':   'carrefour.com.ar',
+  'jumbo':       'jumbo.com.ar',
+  'dia':         'dia.com.ar',
+  'changom':     'changomas.com.ar',
+  'walmart':     'walmart.com.ar',
+  'vea':         'vea.com.ar',
+  'disco':       'disco.com.ar',
+  'libertad':    'hiperlibertad.com.ar',
+  'mayorista':   'mayorista10.com.ar',
+  'maxiconsumo': 'maxiconsumo.com.ar',
+  'toledo':      'supermercadostoledo.com.ar',
+  'lanonima':    'lanonima.com.ar',
+};
+
+const CHAIN_EMOJI = {
+  'coto': '🔴', 'carrefour': '🔵', 'jumbo': '🟢', 'dia': '🟥',
+  'changom': '🟠', 'walmart': '🟠', 'vea': '🔷', 'disco': '🟤',
+  'libertad': '🟣', 'mayorista': '🏪',
+};
+
+function chainDomain(name) {
+  const n = name.toLowerCase().replace(/\s+/g,'');
+  for (const [key, domain] of Object.entries(CHAIN_DOMAINS)) {
+    if (n.includes(key)) return domain;
+  }
+  return null;
+}
+
+function chainEmoji(name) {
   const n = name.toLowerCase();
-  if (n.includes('coto'))       return '🔴';
-  if (n.includes('carrefour'))  return '🔵';
-  if (n.includes('jumbo'))      return '🟢';
-  if (n.includes('dia'))        return '🟥';
-  if (n.includes('changom') || n.includes('walmart')) return '🟠';
-  if (n.includes('vea'))        return '🔷';
-  if (n.includes('disco'))      return '🟤';
-  if (n.includes('an') && n.includes('nima')) return '🟡';
-  if (n.includes('libertad'))   return '🟣';
-  if (n.includes('mayorista'))  return '🏪';
+  for (const [key, emoji] of Object.entries(CHAIN_EMOJI)) {
+    if (n.includes(key)) return emoji;
+  }
   return '🏬';
+}
+
+// Devuelve HTML con logo real + emoji de fallback
+function chainLogoHtml(name) {
+  const domain  = chainDomain(name);
+  const emoji   = chainEmoji(name);
+  const alt     = escapeHtml(name);
+  if (!domain) return `<span class="chain-emoji">${emoji}</span>`;
+  const src = `https://logo.clearbit.com/${domain}`;
+  return `<img class="chain-logo-img"
+    src="${src}"
+    alt="${alt}"
+    onerror="this.style.display='none';this.nextElementSibling.style.display='inline'"
+  /><span class="chain-emoji" style="display:none">${emoji}</span>`;
+}
+
+// Mantener para compatibilidad con data.js estático
+function chainLogo(name) { return chainEmoji(name); }
+
+// URL directa de imagen de producto en Open Food Facts (por EAN)
+// Si el producto no existe, el onerror la oculta automáticamente
+function offImgUrl(ean) {
+  if (!ean) return null;
+  const s = String(ean).replace(/\D/g,'').padStart(13,'0');
+  const path = `${s.slice(0,3)}/${s.slice(3,6)}/${s.slice(6,9)}/${s.slice(9)}`;
+  return `https://images.openfoodfacts.org/images/products/${path}/front_es.400.jpg`;
+}
+
+function productImgHtml(ean) {
+  const url = offImgUrl(ean);
+  if (!url) return '';
+  return `<img class="product-img"
+    src="${url}"
+    alt="Foto del producto"
+    onerror="this.parentElement.classList.add('no-img')"
+    loading="lazy"
+  />`;
 }
 
 // ── Init ──────────────────────────────────────────────────────────────────────
