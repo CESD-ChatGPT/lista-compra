@@ -1,0 +1,53 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Lista de la Compra</title>
+  <link rel="stylesheet" href="style.css" />
+</head>
+<body>
+  <div class="app">
+    <header>
+      <h1>🛒 Lista de la Compra</h1>
+      <p class="subtitle" id="summary">0 artículos pendientes</p>
+    </header>
+
+    <form class="add-form" id="addForm">
+      <input
+        type="text"
+        id="itemInput"
+        placeholder="Añadir artículo..."
+        autocomplete="off"
+        maxlength="60"
+      />
+      <select id="categorySelect">
+        <option value="otros">Otros</option>
+        <option value="frutas">Frutas y Verduras</option>
+        <option value="lacteos">Lácteos</option>
+        <option value="carnes">Carnes y Pescados</option>
+        <option value="panaderia">Panadería</option>
+        <option value="bebidas">Bebidas</option>
+        <option value="limpieza">Limpieza</option>
+        <option value="congelados">Congelados</option>
+      </select>
+      <button type="submit">Añadir</button>
+    </form>
+
+    <div class="filters">
+      <button class="filter-btn active" data-filter="all">Todos</button>
+      <button class="filter-btn" data-filter="pending">Pendientes</button>
+      <button class="filter-btn" data-filter="done">Comprados</button>
+    </div>
+
+    <ul class="item-list" id="itemList"></ul>
+
+    <div class="actions" id="actionsBar" style="display:none">
+      <button class="btn-clear" id="clearDone">Eliminar comprados</button>
+      <button class="btn-clear-all" id="clearAll">Vaciar lista</button>
+    </div>
+  </div>
+
+  <script src="app.js"></script>
+</body>
+</html>

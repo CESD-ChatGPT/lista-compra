@@ -1,0 +1,308 @@
+*, *::before, *::after {
+  box-sizing: border-box;
+  margin: 0;
+  padding: 0;
+}
+
+body {
+  font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+  background: #f0f4f8;
+  min-height: 100vh;
+  display: flex;
+  justify-content: center;
+  align-items: flex-start;
+  padding: 24px 16px 48px;
+}
+
+.app {
+  background: #fff;
+  border-radius: 16px;
+  box-shadow: 0 4px 24px rgba(0,0,0,0.10);
+  width: 100%;
+  max-width: 520px;
+  overflow: hidden;
+}
+
+/* Header */
+header {
+  background: #2563eb;
+  color: #fff;
+  padding: 24px 24px 20px;
+}
+
+header h1 {
+  font-size: 1.6rem;
+  font-weight: 700;
+  letter-spacing: -0.5px;
+}
+
+.subtitle {
+  margin-top: 4px;
+  font-size: 0.9rem;
+  opacity: 0.85;
+}
+
+/* Add form */
+.add-form {
+  display: flex;
+  gap: 8px;
+  padding: 16px;
+  border-bottom: 1px solid #e5e7eb;
+  flex-wrap: wrap;
+}
+
+.add-form input[type="text"] {
+  flex: 1 1 180px;
+  padding: 10px 14px;
+  border: 1.5px solid #d1d5db;
+  border-radius: 8px;
+  font-size: 0.95rem;
+  outline: none;
+  transition: border-color 0.2s;
+}
+
+.add-form input[type="text"]:focus {
+  border-color: #2563eb;
+}
+
+.add-form select {
+  flex: 0 1 150px;
+  padding: 10px 8px;
+  border: 1.5px solid #d1d5db;
+  border-radius: 8px;
+  font-size: 0.875rem;
+  background: #f9fafb;
+  outline: none;
+  cursor: pointer;
+}
+
+.add-form button[type="submit"] {
+  padding: 10px 18px;
+  background: #2563eb;
+  color: #fff;
+  border: none;
+  border-radius: 8px;
+  font-size: 0.95rem;
+  font-weight: 600;
+  cursor: pointer;
+  transition: background 0.2s;
+  white-space: nowrap;
+}
+
+.add-form button[type="submit"]:hover {
+  background: #1d4ed8;
+}
+
+/* Filters */
+.filters {
+  display: flex;
+  gap: 6px;
+  padding: 12px 16px;
+  border-bottom: 1px solid #e5e7eb;
+}
+
+.filter-btn {
+  padding: 6px 14px;
+  border: 1.5px solid #d1d5db;
+  border-radius: 20px;
+  background: transparent;
+  font-size: 0.85rem;
+  cursor: pointer;
+  color: #6b7280;
+  transition: all 0.15s;
+}
+
+.filter-btn:hover {
+  border-color: #2563eb;
+  color: #2563eb;
+}
+
+.filter-btn.active {
+  background: #2563eb;
+  border-color: #2563eb;
+  color: #fff;
+}
+
+/* Item list */
+.item-list {
+  list-style: none;
+  padding: 8px 0;
+  min-height: 60px;
+}
+
+.item-list:empty::after {
+  content: 'Sin artículos. ¡Añade algo!';
+  display: block;
+  text-align: center;
+  color: #9ca3af;
+  font-size: 0.9rem;
+  padding: 32px 0;
+}
+
+.item {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  padding: 12px 16px;
+  border-bottom: 1px solid #f3f4f6;
+  transition: background 0.15s;
+  animation: slideIn 0.2s ease;
+}
+
+@keyframes slideIn {
+  from { opacity: 0; transform: translateY(-6px); }
+  to   { opacity: 1; transform: translateY(0); }
+}
+
+.item:last-child {
+  border-bottom: none;
+}
+
+.item:hover {
+  background: #f9fafb;
+}
+
+.item.done .item-name {
+  text-decoration: line-through;
+  color: #9ca3af;
+}
+
+.item.done .item-category {
+  opacity: 0.5;
+}
+
+/* Checkbox */
+.item-check {
+  width: 22px;
+  height: 22px;
+  border: 2px solid #d1d5db;
+  border-radius: 50%;
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  flex-shrink: 0;
+  transition: all 0.15s;
+}
+
+.item-check:hover {
+  border-color: #2563eb;
+}
+
+.item.done .item-check {
+  background: #22c55e;
+  border-color: #22c55e;
+  color: #fff;
+}
+
+.item.done .item-check::after {
+  content: '✓';
+  font-size: 13px;
+  font-weight: 700;
+}
+
+/* Text */
+.item-text {
+  flex: 1;
+  min-width: 0;
+}
+
+.item-name {
+  font-size: 0.95rem;
+  color: #111827;
+  font-weight: 500;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.item-category {
+  font-size: 0.75rem;
+  color: #6b7280;
+  margin-top: 2px;
+}
+
+/* Category badge colors */
+.badge {
+  display: inline-block;
+  padding: 1px 7px;
+  border-radius: 10px;
+  font-size: 0.72rem;
+  font-weight: 600;
+}
+
+.badge-frutas    { background: #d1fae5; color: #065f46; }
+.badge-lacteos   { background: #e0f2fe; color: #0c4a6e; }
+.badge-carnes    { background: #fee2e2; color: #7f1d1d; }
+.badge-panaderia { background: #fef3c7; color: #78350f; }
+.badge-bebidas   { background: #ede9fe; color: #4c1d95; }
+.badge-limpieza  { background: #f0fdf4; color: #14532d; }
+.badge-congelados{ background: #cffafe; color: #164e63; }
+.badge-otros     { background: #f3f4f6; color: #374151; }
+
+/* Delete button */
+.btn-delete {
+  background: none;
+  border: none;
+  cursor: pointer;
+  color: #d1d5db;
+  font-size: 1.1rem;
+  line-height: 1;
+  padding: 4px;
+  border-radius: 6px;
+  transition: color 0.15s, background 0.15s;
+  flex-shrink: 0;
+}
+
+.btn-delete:hover {
+  color: #ef4444;
+  background: #fee2e2;
+}
+
+/* Actions bar */
+.actions {
+  display: flex;
+  gap: 10px;
+  padding: 14px 16px;
+  border-top: 1px solid #e5e7eb;
+  flex-wrap: wrap;
+}
+
+.btn-clear, .btn-clear-all {
+  padding: 8px 16px;
+  border-radius: 8px;
+  font-size: 0.85rem;
+  cursor: pointer;
+  font-weight: 500;
+  border: 1.5px solid;
+  transition: all 0.15s;
+}
+
+.btn-clear {
+  border-color: #d1d5db;
+  background: #fff;
+  color: #6b7280;
+}
+
+.btn-clear:hover {
+  border-color: #ef4444;
+  color: #ef4444;
+}
+
+.btn-clear-all {
+  border-color: #fca5a5;
+  background: #fff;
+  color: #ef4444;
+}
+
+.btn-clear-all:hover {
+  background: #ef4444;
+  border-color: #ef4444;
+  color: #fff;
+}
+
+@media (max-width: 400px) {
+  header h1 { font-size: 1.3rem; }
+  .add-form { flex-direction: column; }
+  .add-form select { flex: 1 1 auto; }
+}
