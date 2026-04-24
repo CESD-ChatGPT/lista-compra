@@ -1,8 +1,72 @@
-const express = require('express');
-const path    = require('path');
+const express   = require('express');
+const path      = require('path');
+const Anthropic = require('@anthropic-ai/sdk');
 
 const app  = express();
 const PORT = process.env.PORT || 3000;
+
+app.use(express.json());
+
+// ── Translation (Claude Haiku + prompt caching) ───────────────────────────────
+const anthropic = new Anthropic({ apiKey: process.env.ANTHROPIC_API_KEY });
+
+const LANG_NAMES = {
+  en: 'English', es: 'Spanish (Argentine)', pt: 'Portuguese',
+  fr: 'French',  de: 'German',              it: 'Italian',
+};
+
+// Shared in-memory cache: avoids re-translating the same texts
+const translateCache = new Map();
+
+// POST /api/translate  { texts: string[], targetLang: string, sourceLang?: string }
+app.post('/api/translate', async (req, res) => {
+  const { texts, targetLang, sourceLang = 'es' } = req.body;
+
+  if (!Array.isArray(texts) || !texts.length || !targetLang) {
+    return res.status(400).json({ error: 'Faltan parámetros' });
+  }
+
+  if (targetLang === sourceLang) {
+    return res.json({ translations: texts });
+  }
+
+  const cacheKey = `${sourceLang}→${targetLang}:${JSON.stringify(texts)}`;
+  if (translateCache.has(cacheKey)) {
+    return res.json({ translations: translateCache.get(cacheKey) });
+  }
+
+  const srcName = LANG_NAMES[sourceLang] || sourceLang;
+  const tgtName = LANG_NAMES[targetLang] || targetLang;
+
+  try {
+    const msg = await anthropic.messages.create({
+      model: 'claude-haiku-4-5-20251001',
+      max_tokens: 1024,
+      system: [
+        {
+          type: 'text',
+          text: `You are a precise translator specializing in product and grocery vocabulary. Translate the given texts from ${srcName} to ${tgtName}. Reply with ONLY a valid JSON array of translated strings in the same order as the input. Keep brand names, numbers, and measurement units unchanged.`,
+          cache_control: { type: 'ephemeral' },
+        },
+      ],
+      messages: [{ role: 'user', content: JSON.stringify(texts) }],
+    });
+
+    let translations;
+    try {
+      translations = JSON.parse(msg.content[0].text.trim());
+      if (!Array.isArray(translations)) throw new Error('not array');
+    } catch {
+      translations = texts;
+    }
+
+    translateCache.set(cacheKey, translations);
+    res.json({ translations });
+  } catch (err) {
+    console.error('[Translate]', err.message);
+    res.json({ translations: texts }); // graceful fallback
+  }
+});
 
 // Servir archivos estáticos del frontend
 app.use(express.static(path.join(__dirname)));

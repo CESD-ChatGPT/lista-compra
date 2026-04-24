@@ -1,6 +1,174 @@
 const LIST_KEY  = 'lista-compra-items';
 const SHOPS_KEY = 'lista-compra-shops';   // cadenas habilitadas
 const LOC_KEY   = 'lista-compra-location';
+const LANG_KEY  = 'lista-compra-lang';
+
+// ── i18n ──────────────────────────────────────────────────────────────────────
+const UI = {
+  es: {
+    tabSearch: 'Buscar', tabGondola: 'Góndolas', tabList: 'Mi lista', tabSettings: 'Mis supers',
+    searchPlaceholder: 'Buscar producto (ej: leche, arroz...)',
+    searchHint: 'Escribí el nombre de un producto para comparar precios en tu zona.',
+    detecting: 'Detectando ubicación...', detect: 'Detectar',
+    detectHint: 'Detectá tu ubicación para ver supermercados de tu zona',
+    detectLocationBtn: '📍 Detectar ubicación',
+    searching: '⏳ Buscando precios en Precios Claros...',
+    bestPrice: 'Mejor precio', add: 'Añadir',
+    addManual: 'Añadir artículo manualmente...',
+    clearDone: 'Eliminar comprados', clearAll: 'Vaciar lista',
+    translating: '🌐 Traduciendo al español...',
+    translatedAs: (q) => `🌐 Buscando en español: "${q}"`,
+    confirmClear: '¿Vaciar toda la lista?',
+    emptyList: 'Sin artículos. Buscá un producto o añadilo manualmente.',
+    noResults: (q) => `Sin resultados para <strong>${q}</strong>.`,
+  },
+  en: {
+    tabSearch: 'Search', tabGondola: 'Aisles', tabList: 'My list', tabSettings: 'My stores',
+    searchPlaceholder: 'Search product (e.g: milk, rice...)',
+    searchHint: 'Type a product name to compare prices in your area.',
+    detecting: 'Detecting location...', detect: 'Detect',
+    detectHint: 'Detect your location to see nearby supermarkets',
+    detectLocationBtn: '📍 Detect location',
+    searching: '⏳ Searching prices...',
+    bestPrice: 'Best price', add: 'Add',
+    addManual: 'Add item manually...',
+    clearDone: 'Remove purchased', clearAll: 'Clear list',
+    translating: '🌐 Translating to Spanish...',
+    translatedAs: (q) => `🌐 Searching in Spanish: "${q}"`,
+    confirmClear: 'Clear the entire list?',
+    emptyList: 'No items. Search a product or add one manually.',
+    noResults: (q) => `No results for <strong>${q}</strong>.`,
+  },
+  pt: {
+    tabSearch: 'Buscar', tabGondola: 'Corredores', tabList: 'Minha lista', tabSettings: 'Meus mercados',
+    searchPlaceholder: 'Buscar produto (ex: leite, arroz...)',
+    searchHint: 'Digite o nome de um produto para comparar preços na sua área.',
+    detecting: 'Detectando localização...', detect: 'Detectar',
+    detectHint: 'Detecte sua localização para ver supermercados próximos',
+    detectLocationBtn: '📍 Detectar localização',
+    searching: '⏳ Buscando preços...',
+    bestPrice: 'Melhor preço', add: 'Adicionar',
+    addManual: 'Adicionar item manualmente...',
+    clearDone: 'Remover comprados', clearAll: 'Limpar lista',
+    translating: '🌐 Traduzindo para espanhol...',
+    translatedAs: (q) => `🌐 Buscando em espanhol: "${q}"`,
+    confirmClear: 'Limpar toda a lista?',
+    emptyList: 'Sem itens. Busque um produto ou adicione manualmente.',
+    noResults: (q) => `Sem resultados para <strong>${q}</strong>.`,
+  },
+  fr: {
+    tabSearch: 'Rechercher', tabGondola: 'Rayons', tabList: 'Ma liste', tabSettings: 'Mes supers',
+    searchPlaceholder: 'Rechercher un produit (ex: lait, riz...)',
+    searchHint: 'Tapez un nom de produit pour comparer les prix dans votre zone.',
+    detecting: 'Détection de la position...', detect: 'Détecter',
+    detectHint: 'Détectez votre position pour voir les supermarchés proches',
+    detectLocationBtn: '📍 Détecter la position',
+    searching: '⏳ Recherche de prix...',
+    bestPrice: 'Meilleur prix', add: 'Ajouter',
+    addManual: 'Ajouter un article manuellement...',
+    clearDone: 'Supprimer les achetés', clearAll: 'Vider la liste',
+    translating: '🌐 Traduction en espagnol...',
+    translatedAs: (q) => `🌐 Recherche en espagnol: "${q}"`,
+    confirmClear: 'Vider toute la liste?',
+    emptyList: 'Aucun article. Recherchez un produit ou ajoutez-en un.',
+    noResults: (q) => `Aucun résultat pour <strong>${q}</strong>.`,
+  },
+  de: {
+    tabSearch: 'Suchen', tabGondola: 'Gänge', tabList: 'Meine Liste', tabSettings: 'Meine Märkte',
+    searchPlaceholder: 'Produkt suchen (z.B: Milch, Reis...)',
+    searchHint: 'Geben Sie einen Produktnamen ein, um Preise in Ihrer Nähe zu vergleichen.',
+    detecting: 'Standort wird erkannt...', detect: 'Erkennen',
+    detectHint: 'Erkenne deinen Standort, um Supermärkte in der Nähe zu sehen',
+    detectLocationBtn: '📍 Standort erkennen',
+    searching: '⏳ Preise werden gesucht...',
+    bestPrice: 'Bester Preis', add: 'Hinzufügen',
+    addManual: 'Artikel manuell hinzufügen...',
+    clearDone: 'Gekaufte entfernen', clearAll: 'Liste leeren',
+    translating: '🌐 Übersetzung ins Spanische...',
+    translatedAs: (q) => `🌐 Suche auf Spanisch: "${q}"`,
+    confirmClear: 'Die gesamte Liste leeren?',
+    emptyList: 'Keine Artikel. Suchen Sie ein Produkt oder fügen Sie eines hinzu.',
+    noResults: (q) => `Keine Ergebnisse für <strong>${q}</strong>.`,
+  },
+  it: {
+    tabSearch: 'Cerca', tabGondola: 'Corsie', tabList: 'La mia lista', tabSettings: 'I miei super',
+    searchPlaceholder: 'Cerca prodotto (es: latte, riso...)',
+    searchHint: 'Digita il nome di un prodotto per confrontare i prezzi nella tua zona.',
+    detecting: 'Rilevamento posizione...', detect: 'Rileva',
+    detectHint: 'Rileva la tua posizione per vedere i supermercati vicini',
+    detectLocationBtn: '📍 Rileva posizione',
+    searching: '⏳ Ricerca prezzi...',
+    bestPrice: 'Miglior prezzo', add: 'Aggiungi',
+    addManual: 'Aggiungi articolo manualmente...',
+    clearDone: 'Rimuovi acquistati', clearAll: 'Svuota lista',
+    translating: '🌐 Traduzione in spagnolo...',
+    translatedAs: (q) => `🌐 Ricerca in spagnolo: "${q}"`,
+    confirmClear: 'Svuotare tutta la lista?',
+    emptyList: 'Nessun articolo. Cerca un prodotto o aggiungine uno.',
+    noResults: (q) => `Nessun risultato per <strong>${q}</strong>.`,
+  },
+};
+
+let currentLang = localStorage.getItem(LANG_KEY) || 'es';
+
+function t(key) {
+  return (UI[currentLang] || UI.es)[key] || (UI.es)[key] || key;
+}
+
+// In-memory translation cache (keyed by lang + texts JSON)
+const txCache = new Map();
+
+async function translateTexts(texts, targetLang, sourceLang = 'es') {
+  if (!texts.length || targetLang === sourceLang) return texts;
+  const key = `${sourceLang}→${targetLang}:${JSON.stringify(texts)}`;
+  if (txCache.has(key)) return txCache.get(key);
+  try {
+    const res = await fetch('/api/translate', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ texts, targetLang, sourceLang }),
+    });
+    const { translations } = await res.json();
+    const result = Array.isArray(translations) ? translations : texts;
+    txCache.set(key, result);
+    return result;
+  } catch {
+    return texts;
+  }
+}
+
+function applyUITranslations() {
+  const lang = currentLang;
+  // Tab labels (keeping badge inside tabList)
+  document.getElementById('tabSearch').childNodes[0].textContent = t('tabSearch') + ' ';
+  document.getElementById('tabGondola').textContent = t('tabGondola');
+  const tabList = document.getElementById('tabList');
+  const badge = tabList.querySelector('.badge-count');
+  tabList.textContent = t('tabList') + ' ';
+  tabList.appendChild(badge);
+  document.getElementById('tabSettings').textContent = t('tabSettings');
+
+  // data-i18n elements
+  document.querySelectorAll('[data-i18n]').forEach(el => {
+    const key = el.dataset.i18n;
+    el.textContent = t(key);
+  });
+  // data-i18n-placeholder elements
+  document.querySelectorAll('[data-i18n-placeholder]').forEach(el => {
+    el.placeholder = t(el.dataset.i18nPlaceholder);
+  });
+  // Search input placeholder
+  const si = document.getElementById('searchInput');
+  if (si) si.placeholder = t('searchPlaceholder');
+
+  // Update html lang attribute
+  document.documentElement.lang = lang;
+
+  // Update active lang button
+  document.querySelectorAll('.lang-btn').forEach(b => {
+    b.classList.toggle('active', b.dataset.lang === lang);
+  });
+}
 
 // ── State ────────────────────────────────────────────────────────────────────
 let shoppingList  = loadJSON(LIST_KEY, []);
@@ -24,6 +192,25 @@ function fmt(n) {
   return '$ ' + Math.round(n).toLocaleString('es-AR');
 }
 
+// ── Language selector ─────────────────────────────────────────────────────────
+document.getElementById('langSelector').addEventListener('click', e => {
+  const btn = e.target.closest('.lang-btn');
+  if (!btn) return;
+  const lang = btn.dataset.lang;
+  if (lang === currentLang) return;
+  currentLang = lang;
+  localStorage.setItem(LANG_KEY, lang);
+  applyUITranslations();
+  // Clear translation cache for new lang, re-run search if active
+  const q = document.getElementById('searchInput').value.trim();
+  if (q) {
+    document.getElementById('searchResults').innerHTML = `<p class="hint">${t('searching')}</p>`;
+    renderSearch(q);
+  } else {
+    document.getElementById('searchResults').innerHTML = `<p class="hint">${t('searchHint')}</p>`;
+  }
+});
+
 // ── Tabs ─────────────────────────────────────────────────────────────────────
 document.querySelectorAll('.tab').forEach(btn => {
   btn.addEventListener('click', () => {
@@ -36,7 +223,7 @@ document.querySelectorAll('.tab').forEach(btn => {
 
 // ── Geolocation ───────────────────────────────────────────────────────────────
 async function detectLocation() {
-  setLocationStatus('Detectando ubicación...', 'loading');
+  setLocationStatus(t('detecting'), 'loading');
 
   return new Promise((resolve, reject) => {
     if (!navigator.geolocation) {
@@ -123,7 +310,7 @@ searchInput.addEventListener('input', () => {
   clearSearchBtn.style.display = q ? '' : 'none';
   clearTimeout(searchTimer);
   if (!q) { renderSearch(''); return; }
-  resultsEl.innerHTML = '<p class="hint">Buscando...</p>';
+  resultsEl.innerHTML = `<p class="hint">${currentLang !== 'es' ? t('translating') : t('searching')}</p>`;
   searchTimer = setTimeout(() => renderSearch(q), 400);
 });
 
@@ -135,16 +322,32 @@ clearSearchBtn.addEventListener('click', () => {
 });
 
 async function renderSearch(query) {
+  const hintEl = document.getElementById('translationHint');
+
   if (!query) {
-    resultsEl.innerHTML = '<p class="hint">Escribí el nombre de un producto para comparar precios en tu zona.</p>';
+    hintEl.style.display = 'none';
+    resultsEl.innerHTML = `<p class="hint">${t('searchHint')}</p>`;
     return;
   }
 
-  resultsEl.innerHTML = '<p class="hint loading">⏳ Buscando precios en Precios Claros...</p>';
+  // Translate query from user language to Spanish if needed
+  let searchQuery = query;
+  if (currentLang !== 'es') {
+    resultsEl.innerHTML = `<p class="hint loading">${t('translating')}</p>`;
+    const [translated] = await translateTexts([query], 'es', currentLang);
+    searchQuery = translated || query;
+    hintEl.style.display = '';
+    document.getElementById('translationHintText').textContent =
+      t('translatedAs')(searchQuery).replace('🌐 ', '');
+  } else {
+    hintEl.style.display = 'none';
+  }
+
+  resultsEl.innerHTML = `<p class="hint loading">${t('searching')}</p>`;
 
   // Intentar API real primero
   try {
-    const params = new URLSearchParams({ q: query });
+    const params = new URLSearchParams({ q: searchQuery });
     if (userLocation) {
       params.set('lat', userLocation.lat);
       params.set('lng', userLocation.lng);
@@ -154,7 +357,7 @@ async function renderSearch(query) {
     const data = await res.json();
 
     if (data.source === 'precios_claros' && data.productos?.length) {
-      renderRealResults(data.productos, query);
+      await renderRealResults(data.productos, query);
       return;
     }
   } catch (err) {
@@ -162,13 +365,20 @@ async function renderSearch(query) {
   }
 
   // Fallback: datos estáticos
-  renderStaticResults(query);
+  await renderStaticResults(query, searchQuery);
 }
 
-function renderRealResults(productos, query) {
+async function renderRealResults(productos, query) {
   if (!productos.length) {
-    resultsEl.innerHTML = `<p class="hint">Sin resultados en Precios Claros para <strong>${escapeHtml(query)}</strong>.<br>Probá con otro término.</p>`;
+    resultsEl.innerHTML = `<p class="hint">${t('noResults')(escapeHtml(query))}</p>`;
     return;
+  }
+
+  // Translate product names if not in Spanish
+  if (currentLang !== 'es') {
+    const names = productos.map(p => p.nombre);
+    const translated = await translateTexts(names, currentLang, 'es');
+    productos = productos.map((p, i) => ({ ...p, nombre: translated[i] || p.nombre }));
   }
 
   const filteredByShop = (precios) => {
@@ -189,13 +399,13 @@ function renderRealResults(productos, query) {
         <span class="shop-name">${escapeHtml(p.cadena)}</span>
         <span class="shop-price">${fmt(p.precio)}</span>
         ${isBest
-          ? '<span class="best-tag">Mejor precio</span>'
+          ? `<span class="best-tag">${t('bestPrice')}</span>`
           : `<span class="diff">+${fmt(diff)}</span>`}
         <button class="btn-add-list"
           data-product="${escapeHtml(prod.nombre)}"
           data-shop="${escapeHtml(p.cadena)}"
           data-price="${p.precio}"
-          title="Añadir a mi lista">+</button>
+          title="${t('add')}">+</button>
       </div>`;
     }).join('');
 
@@ -221,16 +431,24 @@ function renderRealResults(productos, query) {
   resultsEl.innerHTML = cards.join('');
 }
 
-function renderStaticResults(query) {
-  const q = query.toLowerCase().normalize('NFD').replace(/[\u0300-\u036f]/g,'');
+async function renderStaticResults(query, searchQueryEs = query) {
+  const norm = s => s.toLowerCase().normalize('NFD').replace(/[\u0300-\u036f]/g,'');
+  const qEs   = norm(searchQueryEs);
+  const qUser = norm(query);
   const matches = PRODUCTS.filter(p => {
-    const name = p.name.toLowerCase().normalize('NFD').replace(/[\u0300-\u036f]/g,'');
-    return name.includes(q);
+    const name = norm(p.name);
+    return name.includes(qEs) || name.includes(qUser);
   });
 
   if (!matches.length) {
-    resultsEl.innerHTML = `<p class="hint">Sin resultados para <strong>${escapeHtml(query)}</strong>.</p>`;
+    resultsEl.innerHTML = `<p class="hint">${t('noResults')(escapeHtml(query))}</p>`;
     return;
+  }
+
+  // Translate product names if not in Spanish
+  let displayNames = matches.map(p => p.name);
+  if (currentLang !== 'es') {
+    displayNames = await translateTexts(displayNames, currentLang, 'es');
   }
 
   // Filtrar por supermercados activos
@@ -238,7 +456,8 @@ function renderStaticResults(query) {
     ? SUPERMARKETS.filter(s => enabledShops.includes(s.id)).map(s => s.id)
     : SUPERMARKETS.map(s => s.id);
 
-  const cards = matches.map(prod => {
+  const cards = matches.map((prod, idx) => {
+    const displayName = displayNames[idx] || prod.name;
     const rows = SUPERMARKETS
       .filter(s => activeShopIds.includes(s.id))
       .map(s => ({ s, price: prod.prices[s.id] ?? null }))
@@ -254,12 +473,12 @@ function renderStaticResults(query) {
         <span class="shop-logo">${chainLogoHtml(r.s.name)}</span>
         <span class="shop-name">${escapeHtml(r.s.name)}</span>
         <span class="shop-price">${fmt(r.price)}</span>
-        ${isBest ? '<span class="best-tag">Mejor precio</span>' : `<span class="diff">+${fmt(r.price - minPrice)}</span>`}
+        ${isBest ? `<span class="best-tag">${t('bestPrice')}</span>` : `<span class="diff">+${fmt(r.price - minPrice)}</span>`}
         <button class="btn-add-list"
-          data-product="${escapeHtml(prod.name)}"
+          data-product="${escapeHtml(displayName)}"
           data-shop="${escapeHtml(r.s.name)}"
           data-price="${r.price}"
-          title="Añadir a mi lista">+</button>
+          title="${t('add')}">+</button>
       </div>`;
     }).join('');
 
@@ -267,7 +486,7 @@ function renderStaticResults(query) {
       <div class="product-header">
         ${productImgHtml(prod.ean ?? null)}
         <div class="product-info">
-          <span class="product-name">${escapeHtml(prod.name)}</span>
+          <span class="product-name">${escapeHtml(displayName)}</span>
           <span class="product-unit">${escapeHtml(prod.unit)}</span>
         </div>
       </div>
@@ -310,7 +529,7 @@ document.getElementById('clearDone').addEventListener('click', () => {
   renderList();
 });
 document.getElementById('clearAll').addEventListener('click', () => {
-  if (!confirm('¿Vaciar toda la lista?')) return;
+  if (!confirm(t('confirmClear'))) return;
   shoppingList = [];
   saveJSON(LIST_KEY, shoppingList);
   renderList();
@@ -339,7 +558,7 @@ function addToList(name, shop = null, price = null) {
 
 function renderList() {
   if (!shoppingList.length) {
-    itemListEl.innerHTML = '<li class="empty-list">Sin artículos. Buscá un producto o añadilo manualmente.</li>';
+    itemListEl.innerHTML = `<li class="empty-list">${t('emptyList')}</li>`;
     listActionsEl.style.display = 'none';
     updateListBadge();
     return;
@@ -698,6 +917,7 @@ function truncate(str, max) {
 }
 
 // ── Init ──────────────────────────────────────────────────────────────────────
+applyUITranslations();
 renderSearch('');
 renderList();
 renderSettings();

@@ -9,12 +9,22 @@
 <body>
   <div class="app">
     <header>
-      <h1>🛒 Lista de la Compra</h1>
+      <div class="header-top">
+        <h1>🛒 Lista de la Compra</h1>
+        <div class="lang-selector" id="langSelector">
+          <button class="lang-btn active" data-lang="es">ES</button>
+          <button class="lang-btn" data-lang="en">EN</button>
+          <button class="lang-btn" data-lang="pt">PT</button>
+          <button class="lang-btn" data-lang="fr">FR</button>
+          <button class="lang-btn" data-lang="de">DE</button>
+          <button class="lang-btn" data-lang="it">IT</button>
+        </div>
+      </div>
       <nav class="tabs">
-        <button class="tab active" data-tab="search">Buscar</button>
-        <button class="tab" data-tab="gondola">Góndolas</button>
-        <button class="tab" data-tab="list">Mi lista <span class="badge-count" id="listCount"></span></button>
-        <button class="tab" data-tab="settings">Mis supers</button>
+        <button class="tab active" data-tab="search" id="tabSearch">Buscar</button>
+        <button class="tab" data-tab="gondola" id="tabGondola">Góndolas</button>
+        <button class="tab" data-tab="list" id="tabList">Mi lista <span class="badge-count" id="listCount"></span></button>
+        <button class="tab" data-tab="settings" id="tabSettings">Mis supers</button>
       </nav>
     </header>
 
@@ -24,14 +34,19 @@
       <!-- Barra de ubicación -->
       <div class="location-bar" id="locationBar">
         <span class="location-icon">📍</span>
-        <span class="location-text" id="locationText">Detectá tu ubicación para ver supermercados de tu zona</span>
-        <button class="btn-location" id="btnLocation">Detectar</button>
+        <span class="location-text" id="locationText" data-i18n="detectHint">Detectá tu ubicación para ver supermercados de tu zona</span>
+        <button class="btn-location" id="btnLocation" data-i18n="detect">Detectar</button>
       </div>
 
       <!-- Barra de búsqueda -->
       <div class="search-bar">
         <input type="text" id="searchInput" placeholder="Buscar producto (ej: leche, arroz...)" autocomplete="off" />
         <button id="clearSearch" class="btn-icon" title="Limpiar" style="display:none">✕</button>
+      </div>
+      <!-- Indicador de traducción -->
+      <div class="translation-hint" id="translationHint" style="display:none">
+        <span class="translation-icon">🌐</span>
+        <span id="translationHintText"></span>
       </div>
 
       <div id="searchResults"></div>
@@ -64,13 +79,13 @@
     <!-- ===== TAB: MI LISTA ===== -->
     <section class="tab-content" id="tab-list">
       <div class="add-form-simple">
-        <input type="text" id="manualInput" placeholder="Añadir artículo manualmente..." maxlength="60" />
-        <button id="manualAdd">Añadir</button>
+        <input type="text" id="manualInput" placeholder="Añadir artículo manualmente..." maxlength="60" data-i18n-placeholder="addManual" />
+        <button id="manualAdd" data-i18n="add">Añadir</button>
       </div>
       <ul class="item-list" id="itemList"></ul>
       <div class="list-actions" id="listActions" style="display:none">
-        <button class="btn-secondary" id="clearDone">Eliminar comprados</button>
-        <button class="btn-danger" id="clearAll">Vaciar lista</button>
+        <button class="btn-secondary" id="clearDone" data-i18n="clearDone">Eliminar comprados</button>
+        <button class="btn-danger" id="clearAll" data-i18n="clearAll">Vaciar lista</button>
       </div>
     </section>
 
@@ -78,7 +93,7 @@
     <section class="tab-content" id="tab-settings">
       <div class="settings-top">
         <p class="settings-hint" id="settingsHint">Detectá tu ubicación para ver los supermercados de tu zona.</p>
-        <button class="btn-location-sm" id="btnLocationSettings">📍 Detectar ubicación</button>
+        <button class="btn-location-sm" id="btnLocationSettings" data-i18n="detectLocationBtn">📍 Detectar ubicación</button>
       </div>
       <ul class="supermarket-list" id="supermarketList">
         <li class="empty-settings">Sin supermercados detectados aún.</li>
