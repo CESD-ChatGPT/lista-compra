@@ -13,6 +13,7 @@ const anthropic = new Anthropic({ apiKey: process.env.ANTHROPIC_API_KEY });
 const LANG_NAMES = {
   en: 'English', es: 'Spanish (Argentine)', pt: 'Portuguese',
   fr: 'French',  de: 'German',              it: 'Italian',
+  zh: 'Simplified Chinese',
 };
 
 // Shared in-memory cache: avoids re-translating the same texts

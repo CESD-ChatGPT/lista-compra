@@ -1,7 +1,8 @@
-const LIST_KEY  = 'lista-compra-items';
-const SHOPS_KEY = 'lista-compra-shops';   // cadenas habilitadas
-const LOC_KEY   = 'lista-compra-location';
-const LANG_KEY  = 'lista-compra-lang';
+const LIST_KEY   = 'lista-compra-items';
+const SHOPS_KEY  = 'lista-compra-shops';   // cadenas habilitadas
+const LOC_KEY    = 'lista-compra-location';
+const LANG_KEY   = 'lista-compra-lang';
+const BUDGET_KEY = 'lista-compra-budget';
 
 // ── i18n ──────────────────────────────────────────────────────────────────────
 const UI = {
@@ -21,6 +22,11 @@ const UI = {
     confirmClear: '¿Vaciar toda la lista?',
     emptyList: 'Sin artículos. Buscá un producto o añadilo manualmente.',
     noResults: (q) => `Sin resultados para <strong>${q}</strong>.`,
+    budget: '💰 Presupuesto', budgetPlaceholder: 'Tu presupuesto...',
+    totalInList: 'Total estimado', budgetLeft: 'Restante',
+    budgetOver: '⚠ Presupuesto superado',
+    youSave: 'ahorrás',
+    educTip: '💡 Comparar precios entre supermercados puede ahorrarte hasta un 30% en tu compra mensual.',
   },
   en: {
     tabSearch: 'Search', tabGondola: 'Aisles', tabList: 'My list', tabSettings: 'My stores',
@@ -38,6 +44,11 @@ const UI = {
     confirmClear: 'Clear the entire list?',
     emptyList: 'No items. Search a product or add one manually.',
     noResults: (q) => `No results for <strong>${q}</strong>.`,
+    budget: '💰 Budget', budgetPlaceholder: 'Your budget...',
+    totalInList: 'Estimated total', budgetLeft: 'Remaining',
+    budgetOver: '⚠ Budget exceeded',
+    youSave: 'you save',
+    educTip: '💡 Comparing prices between supermarkets can save you up to 30% on your monthly shopping.',
   },
   pt: {
     tabSearch: 'Buscar', tabGondola: 'Corredores', tabList: 'Minha lista', tabSettings: 'Meus mercados',
@@ -55,6 +66,11 @@ const UI = {
     confirmClear: 'Limpar toda a lista?',
     emptyList: 'Sem itens. Busque um produto ou adicione manualmente.',
     noResults: (q) => `Sem resultados para <strong>${q}</strong>.`,
+    budget: '💰 Orçamento', budgetPlaceholder: 'Seu orçamento...',
+    totalInList: 'Total estimado', budgetLeft: 'Restante',
+    budgetOver: '⚠ Orçamento excedido',
+    youSave: 'você economiza',
+    educTip: '💡 Comparar preços entre supermercados pode economizar até 30% nas suas compras mensais.',
   },
   fr: {
     tabSearch: 'Rechercher', tabGondola: 'Rayons', tabList: 'Ma liste', tabSettings: 'Mes supers',
@@ -72,6 +88,11 @@ const UI = {
     confirmClear: 'Vider toute la liste?',
     emptyList: 'Aucun article. Recherchez un produit ou ajoutez-en un.',
     noResults: (q) => `Aucun résultat pour <strong>${q}</strong>.`,
+    budget: '💰 Budget', budgetPlaceholder: 'Votre budget...',
+    totalInList: 'Total estimé', budgetLeft: 'Restant',
+    budgetOver: '⚠ Budget dépassé',
+    youSave: 'vous économisez',
+    educTip: '💡 Comparer les prix entre supermarchés peut vous faire économiser jusqu'à 30% sur vos courses mensuelles.',
   },
   de: {
     tabSearch: 'Suchen', tabGondola: 'Gänge', tabList: 'Meine Liste', tabSettings: 'Meine Märkte',
@@ -89,6 +110,11 @@ const UI = {
     confirmClear: 'Die gesamte Liste leeren?',
     emptyList: 'Keine Artikel. Suchen Sie ein Produkt oder fügen Sie eines hinzu.',
     noResults: (q) => `Keine Ergebnisse für <strong>${q}</strong>.`,
+    budget: '💰 Budget', budgetPlaceholder: 'Ihr Budget...',
+    totalInList: 'Geschätzte Summe', budgetLeft: 'Verbleibend',
+    budgetOver: '⚠ Budget überschritten',
+    youSave: 'Sie sparen',
+    educTip: '💡 Preisvergleiche zwischen Supermärkten können bis zu 30% Ihrer monatlichen Einkaufskosten einsparen.',
   },
   it: {
     tabSearch: 'Cerca', tabGondola: 'Corsie', tabList: 'La mia lista', tabSettings: 'I miei super',
@@ -106,6 +132,33 @@ const UI = {
     confirmClear: 'Svuotare tutta la lista?',
     emptyList: 'Nessun articolo. Cerca un prodotto o aggiungine uno.',
     noResults: (q) => `Nessun risultato per <strong>${q}</strong>.`,
+    budget: '💰 Budget', budgetPlaceholder: 'Il tuo budget...',
+    totalInList: 'Totale stimato', budgetLeft: 'Rimanente',
+    budgetOver: '⚠ Budget superato',
+    youSave: 'risparmi',
+    educTip: '💡 Confrontare i prezzi tra supermercati può farti risparmiare fino al 30% sulla spesa mensile.',
+  },
+  zh: {
+    tabSearch: '搜索', tabGondola: '货架', tabList: '购物清单', tabSettings: '超市设置',
+    searchPlaceholder: '搜索商品（例如：牛奶、大米...）',
+    searchHint: '输入商品名称，比较您所在区域各超市的价格。',
+    detecting: '正在定位...', detect: '定位',
+    detectHint: '定位您的位置，查看附近的超市',
+    detectLocationBtn: '📍 定位',
+    searching: '⏳ 正在搜索价格...',
+    bestPrice: '最优价格', add: '添加',
+    addManual: '手动添加商品...',
+    clearDone: '删除已购', clearAll: '清空清单',
+    translating: '🌐 正在翻译为西班牙语...',
+    translatedAs: (q) => `🌐 西班牙语搜索："${q}"`,
+    confirmClear: '确定清空整个购物清单？',
+    emptyList: '暂无商品。搜索商品或手动添加。',
+    noResults: (q) => `未找到 <strong>${q}</strong> 的结果。`,
+    budget: '💰 预算', budgetPlaceholder: '输入预算金额...',
+    totalInList: '预计总计', budgetLeft: '剩余',
+    budgetOver: '⚠ 超出预算',
+    youSave: '节省',
+    educTip: '💡 比较各超市价格，每月可节省高达30%的购物费用。',
   },
 };
 
@@ -168,6 +221,12 @@ function applyUITranslations() {
   document.querySelectorAll('.lang-btn').forEach(b => {
     b.classList.toggle('active', b.dataset.lang === lang);
   });
+
+  // Budget bar labels
+  const budgetLabel = document.getElementById('budgetLabel');
+  if (budgetLabel) budgetLabel.textContent = t('budget');
+  const budgetInput = document.getElementById('budgetInput');
+  if (budgetInput) budgetInput.placeholder = t('budgetPlaceholder');
 }
 
 // ── State ────────────────────────────────────────────────────────────────────
@@ -175,6 +234,7 @@ let shoppingList  = loadJSON(LIST_KEY, []);
 let enabledShops  = loadJSON(SHOPS_KEY, null); // null = mostrar todo
 let userLocation  = loadJSON(LOC_KEY, null);   // { lat, lng, label }
 let nearbyChains  = [];  // supermercados detectados cerca
+let budgetAmount  = loadJSON(BUDGET_KEY, null); // null = sin presupuesto
 
 // ── Helpers ──────────────────────────────────────────────────────────────────
 function loadJSON(key, def) {
@@ -400,7 +460,7 @@ async function renderRealResults(productos, query) {
         <span class="shop-price">${fmt(p.precio)}</span>
         ${isBest
           ? `<span class="best-tag">${t('bestPrice')}</span>`
-          : `<span class="diff">+${fmt(diff)}</span>`}
+          : `<span class="diff">+${fmt(diff)}</span><span class="savings-pct">${t('youSave')} ${Math.round((diff/p.precio)*100)}%</span>`}
         <button class="btn-add-list"
           data-product="${escapeHtml(prod.nombre)}"
           data-shop="${escapeHtml(p.cadena)}"
@@ -473,7 +533,7 @@ async function renderStaticResults(query, searchQueryEs = query) {
         <span class="shop-logo">${chainLogoHtml(r.s.name)}</span>
         <span class="shop-name">${escapeHtml(r.s.name)}</span>
         <span class="shop-price">${fmt(r.price)}</span>
-        ${isBest ? `<span class="best-tag">${t('bestPrice')}</span>` : `<span class="diff">+${fmt(r.price - minPrice)}</span>`}
+        ${isBest ? `<span class="best-tag">${t('bestPrice')}</span>` : `<span class="diff">+${fmt(r.price - minPrice)}</span><span class="savings-pct">${t('youSave')} ${Math.round(((r.price-minPrice)/r.price)*100)}%</span>`}
         <button class="btn-add-list"
           data-product="${escapeHtml(displayName)}"
           data-shop="${escapeHtml(r.s.name)}"
@@ -560,6 +620,7 @@ function renderList() {
   if (!shoppingList.length) {
     itemListEl.innerHTML = `<li class="empty-list">${t('emptyList')}</li>`;
     listActionsEl.style.display = 'none';
+    renderBudgetSummary();
     updateListBadge();
     return;
   }
@@ -576,7 +637,48 @@ function renderList() {
     </li>`;
   }).join('');
   listActionsEl.style.display = 'flex';
+  renderBudgetSummary();
   updateListBadge();
+}
+
+function renderBudgetSummary() {
+  let summaryEl = document.getElementById('budgetSummary');
+  if (!summaryEl) {
+    summaryEl = document.createElement('div');
+    summaryEl.id = 'budgetSummary';
+    summaryEl.className = 'budget-summary';
+    const listSection = document.getElementById('tab-list');
+    listSection.insertBefore(summaryEl, listSection.querySelector('.add-form-simple').nextSibling);
+  }
+
+  const total = shoppingList
+    .filter(i => i.price && !i.done)
+    .reduce((acc, i) => acc + i.price, 0);
+
+  if (!budgetAmount || total === 0) {
+    summaryEl.style.display = 'none';
+    return;
+  }
+
+  const remaining = budgetAmount - total;
+  const pct = Math.min(100, Math.round((total / budgetAmount) * 100));
+  const over = remaining < 0;
+
+  summaryEl.style.display = '';
+  summaryEl.innerHTML = `
+    <div class="budget-summary-row">
+      <span class="budget-summary-label">${t('totalInList')}:</span>
+      <span class="budget-summary-value">${fmt(total)}</span>
+    </div>
+    <div class="budget-summary-row">
+      <span class="budget-summary-label ${over ? 'budget-over-label' : ''}">${over ? t('budgetOver') : t('budgetLeft') + ':'}${over ? '' : ''}</span>
+      <span class="budget-summary-value ${over ? 'budget-over-label' : ''}">${over ? '' : fmt(remaining)}</span>
+    </div>
+    <div class="budget-progress-bar">
+      <div class="budget-progress-fill ${over ? 'over' : ''}" style="width:${pct}%"></div>
+    </div>
+    <div class="budget-pct-label">${pct}% ${over ? '📛' : pct >= 80 ? '⚠️' : '✅'}</div>
+  `;
 }
 
 function updateListBadge() {
@@ -768,6 +870,10 @@ function initGondolas() {
 }
 
 function renderGondolaHome() {
+  // Educational tip
+  const introEl = document.querySelector('.gondola-intro');
+  if (introEl) introEl.textContent = t('educTip');
+
   const grid = document.getElementById('gondolaGrid');
   grid.innerHTML = gondolaDefs.map(g => `
     <button class="gondola-card" data-id="${escapeHtml(g.id)}"
@@ -915,6 +1021,39 @@ document.getElementById('btnBackGondola').addEventListener('click', () => {
 function truncate(str, max) {
   return str.length <= max ? str : str.slice(0, max - 1) + '…';
 }
+
+// ── Budget bar ───────────────────────────────────────────────────────────────
+(function initBudgetBar() {
+  const input    = document.getElementById('budgetInput');
+  const clearBtn = document.getElementById('clearBudget');
+
+  if (budgetAmount !== null) {
+    input.value = budgetAmount;
+    clearBtn.style.display = '';
+  }
+
+  input.addEventListener('input', () => {
+    const val = parseFloat(input.value);
+    if (!isNaN(val) && val > 0) {
+      budgetAmount = val;
+      saveJSON(BUDGET_KEY, val);
+      clearBtn.style.display = '';
+    } else {
+      budgetAmount = null;
+      saveJSON(BUDGET_KEY, null);
+      clearBtn.style.display = 'none';
+    }
+    renderList();
+  });
+
+  clearBtn.addEventListener('click', () => {
+    input.value = '';
+    budgetAmount = null;
+    saveJSON(BUDGET_KEY, null);
+    clearBtn.style.display = 'none';
+    renderList();
+  });
+})();
 
 // ── Init ──────────────────────────────────────────────────────────────────────
 applyUITranslations();

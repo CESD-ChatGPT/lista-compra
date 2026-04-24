@@ -85,6 +85,109 @@ header h1 {
 
 .translation-icon { font-size: 0.95rem; }
 
+/* ── Budget bar (search tab) ─────────────────────────────────────────────── */
+.budget-bar {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  padding: 8px 16px;
+  background: #f0fdf4;
+  border-bottom: 1px solid #bbf7d0;
+}
+
+.budget-label {
+  font-size: 0.82rem;
+  font-weight: 600;
+  color: #15803d;
+  white-space: nowrap;
+}
+
+.budget-currency {
+  font-size: 0.9rem;
+  color: #166534;
+  font-weight: 700;
+}
+
+.budget-input {
+  flex: 1;
+  padding: 5px 10px;
+  border: 1.5px solid #86efac;
+  border-radius: 7px;
+  font-size: 0.9rem;
+  color: #166534;
+  outline: none;
+  background: #fff;
+  max-width: 160px;
+}
+
+.budget-input:focus { border-color: #22c55e; }
+
+.btn-clear-budget {
+  background: none;
+  border: none;
+  color: #6b7280;
+  font-size: 0.85rem;
+  cursor: pointer;
+  padding: 2px 4px;
+  border-radius: 4px;
+}
+.btn-clear-budget:hover { background: #fee2e2; color: #dc2626; }
+
+/* ── Budget summary (list tab) ───────────────────────────────────────────── */
+.budget-summary {
+  margin: 8px 16px;
+  padding: 10px 14px;
+  background: #f0fdf4;
+  border: 1.5px solid #86efac;
+  border-radius: 10px;
+  font-size: 0.85rem;
+}
+
+.budget-summary-row {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 4px;
+}
+
+.budget-summary-label { color: #374151; font-weight: 500; }
+.budget-summary-value { font-weight: 700; color: #166534; }
+.budget-over-label    { color: #dc2626 !important; }
+
+.budget-progress-bar {
+  height: 7px;
+  background: #dcfce7;
+  border-radius: 99px;
+  overflow: hidden;
+  margin: 6px 0 3px;
+}
+
+.budget-progress-fill {
+  height: 100%;
+  background: #22c55e;
+  border-radius: 99px;
+  transition: width 0.3s ease;
+}
+
+.budget-progress-fill.over { background: #ef4444; }
+
+.budget-pct-label {
+  text-align: right;
+  font-size: 0.75rem;
+  color: #6b7280;
+}
+
+/* ── Savings indicator in price rows ─────────────────────────────────────── */
+.savings-pct {
+  font-size: 0.72rem;
+  font-weight: 600;
+  color: #16a34a;
+  background: #dcfce7;
+  border-radius: 5px;
+  padding: 1px 5px;
+  white-space: nowrap;
+}
+
 .tabs {
   display: flex;
   gap: 2px;

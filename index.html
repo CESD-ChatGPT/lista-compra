@@ -18,6 +18,7 @@
           <button class="lang-btn" data-lang="fr">FR</button>
           <button class="lang-btn" data-lang="de">DE</button>
           <button class="lang-btn" data-lang="it">IT</button>
+          <button class="lang-btn" data-lang="zh">中文</button>
         </div>
       </div>
       <nav class="tabs">
@@ -36,6 +37,14 @@
         <span class="location-icon">📍</span>
         <span class="location-text" id="locationText" data-i18n="detectHint">Detectá tu ubicación para ver supermercados de tu zona</span>
         <button class="btn-location" id="btnLocation" data-i18n="detect">Detectar</button>
+      </div>
+
+      <!-- Barra de presupuesto educativo -->
+      <div class="budget-bar" id="budgetBar">
+        <label class="budget-label" id="budgetLabel" for="budgetInput">💰 Presupuesto</label>
+        <span class="budget-currency">$</span>
+        <input type="number" id="budgetInput" class="budget-input" placeholder="Tu presupuesto..." min="0" step="100" />
+        <button class="btn-clear-budget" id="clearBudget" title="Quitar presupuesto" style="display:none">✕</button>
       </div>
 
       <!-- Barra de búsqueda -->
